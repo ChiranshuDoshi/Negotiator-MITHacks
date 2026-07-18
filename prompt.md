@@ -1,4 +1,4 @@
-Paste this entire prompt into Codex. It implements the track’s required document-plus-voice intake, one confirmed specification reused across three distinct counterparties, structured quote comparison, a leverage-based second negotiation, and an evidence-backed final report, while replacing telephony with live localhost ElevenLabs conversations. 
+Paste this entire prompt into Codex. It implements account creation, quote-ready profile setup, source-backed Top 5 insurer research, one confirmed specification reused across five counterparties, a user-controlled quote dashboard, target-range negotiation, and an evidence-backed final report. The hackathon demo uses live localhost ElevenLabs conversations instead of real telephony.
 
 ```text
 You are Codex acting as the lead engineer for a four-person hackathon team.
@@ -24,7 +24,7 @@ Before writing code:
    - Shared contracts.
    - Commands.
    - Security rules.
-   - Four-person ownership split defined at the end of this prompt.
+   - Four-person ownership split from people_split.md.
 5. Create a concise implementation checklist.
 6. Implement the application.
 7. Run lint, type checking, tests, and the primary end-to-end demo.
@@ -41,27 +41,31 @@ Make reasonable implementation decisions without repeatedly asking for clarifica
 
 Product name: PolicyScout
 
-PolicyScout is an AI insurance shopping assistant that helps users obtain and compare insurance quotes without repeatedly explaining the same coverage requirements to multiple insurers or agents.
+PolicyScout is an AI insurance shopping and negotiation assistant that helps authenticated users obtain, compare, and improve insurance quotes without repeatedly explaining the same underwriting and coverage information to multiple insurers or agents.
 
-The user uploads their current insurance declaration page or related policy documents. PolicyScout extracts their existing coverage, fills missing information through an ElevenLabs voice interview, researches suitable insurers or agencies, gathers coverage-matched quotes from simulated provider agents, normalizes every offer into one schema, performs a second negotiation round using verified leverage, and produces an evidence-backed recommendation.
+The user creates an account and completes a quote-ready InsuranceProfile. A declaration-page upload and an ElevenLabs voice interview help extract or fill missing information, but the user must review and confirm the final profile. PolicyScout researches eligible insurers, ranks the Top 5 primarily by source-backed ratings, requests a coverage-matched quote from all five simulated provider agents, and normalizes every outcome into one dashboard. The system may recommend the strongest comparable offer, but the user chooses which quote to negotiate and enters a target price or acceptable range. The Negotiator then follows up with only that selected provider, uses truthful verified leverage when available, and records the before-and-after result.
 
 Canonical workflow:
 
-User uploads current insurance declaration page
+User signs up or logs in
                  ↓
-Intake Agent extracts and confirms coverage profile
+Profile setup collects all quote-required insurance information
                  ↓
-Market Research finds suitable insurers or agents
+Document extraction and voice intake fill gaps; user confirms one profile
                  ↓
-Calling Agent requests coverage-matched quotes
+Market Research ranks eligible insurers and selects the Top 5
                  ↓
-Quote Normalizer converts every offer into one schema
+Calling Agent requests the best coverage-matched quote from all five
                  ↓
-Negotiator selects the strongest verified competing offer
+Quote Normalizer converts every outcome into one dashboard schema
                  ↓
-Second-round conversation asks a provider to improve price or terms
+System recommends; user selects the quote to negotiate
                  ↓
-Frontend presents an evidence-backed recommendation
+User enters a target price or acceptable range and confirms disclosure rules
+                 ↓
+Negotiator calls only the selected provider and asks for a legitimate improvement
+                 ↓
+Dashboard shows the verified before-and-after result and final recommendation
 
 The complete loop must be visible and functional in the demo.
 
@@ -84,14 +88,16 @@ All conversations run locally through ElevenLabs Conversational AI and the Eleve
 
 The demo must include:
 
-1. A browser voice conversation between the user and the Intake Agent.
-2. Three live, dynamic quote-gathering conversations involving three simulated insurance provider agents.
-3. Three meaningfully different provider negotiation behaviors.
-4. A second-round negotiation conversation.
-5. At least one measurable price or term improvement caused by a verified competing offer.
-6. Live or generated transcripts.
-7. Structured quote data.
-8. Evidence-linked recommendations.
+1. Sign-up or login and a persistent user session.
+2. A quote-ready profile built from structured setup, one supported document, and a browser voice conversation with the Intake Agent.
+3. Source-backed market research that produces exactly five ranked eligible insurers when five are available.
+4. Five live, dynamic quote-gathering conversations involving five simulated insurance provider agents.
+5. At least three meaningfully different provider behaviors across those five agents.
+6. One quote dashboard where the system recommendation and user selection are visibly separate.
+7. A user-entered target price or acceptable range.
+8. A second-round negotiation conversation with only the user-selected provider.
+9. At least one measurable price or term improvement caused by the target goal and/or a verified competing offer.
+10. Live or generated transcripts, structured quote data, and evidence-linked recommendations.
 
 Support two conversation modes.
 
@@ -165,7 +171,7 @@ PolicyScout must never:
 - Misrepresent coverage.
 - Misrepresent another provider’s offer.
 - Pretend to be human.
-- Reveal the user’s private maximum price.
+- Reveal any target ceiling or range beyond the user’s explicit NegotiationGoal disclosure policy.
 - Lower required coverage without explicit approval.
 - Ask a provider to falsify underwriting information.
 - automatically transmit highly sensitive information.
@@ -235,9 +241,9 @@ Instead, create:
 
 A new insurance line should primarily require adding a configuration file rather than rewriting the application.
 
-Support workflows containing one or multiple insurance lines, such as auto plus homeowners.
+The architecture may support workflows containing one or multiple insurance lines, but the hackathon demo must implement one vertical deeply.
 
-For the included demo fixtures, use a simple personal auto plus renters bundle because it gives the system multiple coverage types while remaining understandable.
+For the included demo fixtures, use personal auto insurance in one state. This keeps profile requirements, provider eligibility, five quote calls, and quote equivalence understandable and testable within the hackathon.
 
 ==================================================
 6. TECH STACK
@@ -328,6 +334,11 @@ src/
   app/
     (auth)/
       login/
+      signup/
+      callback/
+    profile/
+      setup/
+      review/
     dashboard/
     workflows/
       new/
@@ -350,6 +361,10 @@ src/
       intake/
         session/
         fields/
+      profile/
+        current/
+        completeness/
+        confirm/
       quote-requests/
         confirm/
       research/
@@ -357,11 +372,14 @@ src/
       providers/
         search/
         approve/
+        top-five/
       conversations/
         start/
         [conversationId]/
         complete/
       negotiations/
+        goal/
+        select-target/
         start/
       reports/
         [workflowId]/
@@ -384,6 +402,8 @@ src/
         delete/
 
   components/
+    auth/
+    profile/
     layout/
     workflow/
     documents/
@@ -411,6 +431,7 @@ src/
     schemas/
     types/
     hashing/
+    research/
     normalization/
     equivalence/
     scoring/
@@ -482,6 +503,7 @@ Implement a server-enforced workflow state machine.
 States:
 
 - draft
+- profile_in_progress
 - documents_uploaded
 - parsing_documents
 - profile_extracted
@@ -489,13 +511,14 @@ States:
 - ready_for_confirmation
 - confirmed
 - researching
-- providers_ready
-- providers_approved
+- providers_ranked
+- top_five_confirmed
 - initial_conversations_ready
 - initial_conversations_running
 - quotes_processing
 - quotes_ready
-- negotiation_ready
+- negotiation_target_selected
+- negotiation_goal_confirmed
 - negotiation_running
 - report_ready
 - human_handoff_required
@@ -556,19 +579,24 @@ Unknown values must be null.
 Never invent missing values.
 
 --------------------------------------------------
-9.3 CoverageProfile
+9.3 InsuranceProfile and CoverageProfile snapshot
 --------------------------------------------------
 
-CoverageProfile must contain:
+InsuranceProfile is the authenticated user’s reusable, quote-ready source profile. CoverageProfile is an immutable workflow snapshot derived from it, document extraction, and confirmed voice or form edits.
+
+InsuranceProfile must contain:
 
 {
   id,
-  workflowId,
+  userId,
   version,
   status,
+  completenessScore,
+  quoteReady,
   userContext,
   currentPolicies,
   insuredEntities,
+  underwritingFacts,
   requestedInsuranceLines,
   coverageSections,
   currentCosts,
@@ -576,9 +604,22 @@ CoverageProfile must contain:
   missingFields,
   conflictingFields,
   evidenceReferences,
+  confirmedAt,
   createdAt,
   updatedAt
 }
+
+CoverageProfile contains the same confirmed insurance-domain fields plus:
+
+{
+  id,
+  workflowId,
+  sourceInsuranceProfileId,
+  sourceInsuranceProfileVersion,
+  snapshotAt
+}
+
+CoverageProfile changes are local to the workflow unless the user explicitly applies confirmed edits back to their reusable InsuranceProfile.
 
 userContext:
 
@@ -589,6 +630,22 @@ userContext:
 - Preferred contact method.
 - Desired effective date.
 - Demo-data status.
+
+For the personal auto demo, InsuranceLineConfig must require enough confirmed data to support an informative quote conversation:
+
+- State and ZIP code.
+- Garaging location at the minimum granularity required by the simulated provider.
+- Desired effective date.
+- Current carrier and continuous-insurance status.
+- Current premium and payment frequency when known.
+- Every driver’s age band or date of birth, license status, years licensed, and recent accident or violation history.
+- Every vehicle’s year, make, model, ownership or lease status, primary use, annual mileage, and garaging status.
+- Requested liability limits, collision and comprehensive selection, deductibles, and optional coverages.
+- Relevant discount eligibility such as bundling, safe driver, multi-vehicle, paid-in-full, autopay, or telematics preference.
+
+Never collect SSNs, payment credentials, or full driver-license numbers. Use synthetic profile data in the demo.
+
+InsuranceLineConfig determines required fields. The server must return explicit missingFields and block market research until quoteReady is true and the user confirms the profile.
 
 currentPolicies:
 
@@ -695,17 +752,17 @@ Encrypt the private JSON using APP_ENCRYPTION_KEY and authenticated encryption.
 
 Only a server-side PrivateConstraintService may decrypt it.
 
-Never return it from:
+Never return the raw PrivateNegotiationConstraints object from:
 
 - Provider-facing APIs.
 - Calling Agent tools.
-- Negotiator tools.
+- Negotiator-facing browser payloads.
 - Research queries.
 - Client logs.
 - Conversation transcripts.
 - Public browser responses.
 
-The maximum acceptable price must never be disclosed to a provider agent.
+The maximum acceptable price must never be disclosed to a provider agent unless the user explicitly chooses a disclosure policy that permits it. The default is do_not_reveal_ceiling.
 
 --------------------------------------------------
 9.5 ConfirmedQuoteRequest
@@ -781,6 +838,15 @@ ProviderResearchBrief contains:
 - Reputation signals.
 - Review count.
 - Rating.
+- Rating scale.
+- Rating source and source URL.
+- Normalized rating.
+- Rating-data recency.
+- Rating confidence.
+- Eligibility status and exclusion reasons.
+- Top 5 rank.
+- Ranking score breakdown.
+- Selection explanation.
 - Warnings.
 - Research sources.
 - Retrieved timestamp.
@@ -943,13 +1009,44 @@ Evidence types:
 Every material quote field must have evidence or be labeled unverified.
 
 --------------------------------------------------
-9.9 NegotiationEvent
+9.9 NegotiationGoal
+--------------------------------------------------
+
+NegotiationGoal is created only after quotes are ready and the user selects one quote on the dashboard.
+
+It contains:
+
+- Goal ID.
+- Workflow ID.
+- User-selected quote ID.
+- Target provider ID.
+- Target amount and billing period, or target range minimum and maximum.
+- Desired non-price improvements.
+- Allowed trade-offs.
+- Hard stops.
+- Optional verified competing quote ID.
+- Disclosure policy.
+- User confirmation timestamp.
+
+Disclosure policies:
+
+- do_not_reveal_ceiling
+- reveal_target_only
+- reveal_range
+
+The system recommendation may pre-highlight a quote but must never create or confirm NegotiationGoal without an explicit user action.
+
+The server keeps the full goal private. The Negotiator receives only the fields allowed by the disclosure policy plus server-side tool results such as target_met or continue_negotiating.
+
+--------------------------------------------------
+9.10 NegotiationEvent
 --------------------------------------------------
 
 NegotiationEvent contains:
 
 - Event ID.
 - Workflow ID.
+- Negotiation goal ID.
 - Target provider ID.
 - Negotiation conversation ID.
 - Original quote ID.
@@ -970,7 +1067,7 @@ NegotiationEvent contains:
 - Verification status.
 
 --------------------------------------------------
-9.10 Recommendation
+9.11 Recommendation
 --------------------------------------------------
 
 Recommendation contains:
@@ -980,6 +1077,8 @@ Recommendation contains:
 - Non-comparable quote IDs.
 - Ranked results.
 - Recommended quote ID.
+- User-selected negotiation quote ID.
+- Selection differs from recommendation flag.
 - Alternative quote IDs.
 - Private-constraint evaluation.
 - Coverage comparison.
@@ -1049,6 +1148,22 @@ profiles:
 - zip_code
 - preferred_language
 - demo_mode
+- onboarding_complete
+- created_at
+- updated_at
+
+insurance_profiles:
+
+- id
+- user_id
+- version
+- insurance_lines
+- profile_json
+- completeness_score
+- quote_ready
+- missing_fields
+- conflicting_fields
+- confirmed_at
 - created_at
 - updated_at
 
@@ -1060,6 +1175,8 @@ workflows:
 - status
 - active_profile_version
 - active_quote_request_id
+- selected_negotiation_quote_id
+- active_negotiation_goal_id
 - created_at
 - updated_at
 
@@ -1170,9 +1287,17 @@ providers:
 - insurance_lines
 - geographic_availability
 - rating
+- rating_scale
+- rating_source
+- normalized_rating
 - review_count
+- rating_confidence
+- eligibility_status
+- top_five_rank
+- ranking_score
+- ranking_explanation
 - license_verification_status
-- approved_by_user
+- confirmed_for_quote_call
 - simulated
 - research_summary_json
 - created_at
@@ -1250,10 +1375,23 @@ evidence:
 - verification_status
 - created_at
 
+negotiation_goals:
+
+- id
+- workflow_id
+- selected_quote_id
+- target_provider_id
+- encrypted_goal_payload
+- disclosure_policy
+- confirmed_at
+- created_at
+- updated_at
+
 negotiation_events:
 
 - id
 - workflow_id
+- negotiation_goal_id
 - target_provider_id
 - negotiation_conversation_id
 - original_quote_id
@@ -1298,10 +1436,56 @@ Users may access only their own workflows and related records.
 Never expose the Supabase service-role key to the browser.
 
 ==================================================
+11.1 AUTHENTICATION AND PROFILE SETUP
+==================================================
+
+Authentication is a required product flow, not a decorative demo screen.
+
+Implement:
+
+- Sign-up with email magic link or one-time code.
+- Login.
+- Auth callback handling.
+- Persistent session restoration.
+- Logout.
+- Protected application routes.
+- Redirect unauthenticated users to login.
+- Redirect authenticated users with an incomplete profile to profile setup.
+- Demo login that creates or restores a deterministic synthetic user only when DEMO_MODE is true.
+- Clear expired-link, invalid-session, network-error, and retry states.
+
+After first login, show a resumable profile wizard driven by InsuranceLineConfig.
+
+The personal auto demo wizard must include:
+
+1. Location, desired effective date, and contact preferences.
+2. Driver roster and rating-relevant driving history.
+3. Vehicle roster, ownership, use, mileage, and garaging details.
+4. Current insurance and coverage history.
+5. Requested limits, deductibles, and optional coverages.
+6. Discount eligibility and monitoring preferences.
+7. Document upload and voice-assisted gap filling.
+8. Final review, consent, and confirmation.
+
+Requirements:
+
+- Save progress after each step.
+- Allow users to resume on another session.
+- Explain why each pricing field is requested.
+- Mark optional, sensitive, missing, conflicting, and provider-shared fields.
+- Allow manual correction of document or voice-derived values.
+- Calculate completeness on the server.
+- Do not mark the profile quote-ready until every required field is confirmed.
+- Do not start market research or quote calls before quoteReady is true.
+- Create a versioned CoverageProfile snapshot for each workflow.
+
+The target negotiation price or acceptable range is not required during onboarding. Collect it only after the user sees the normalized quotes and selects a negotiation target.
+
+==================================================
 12. DOCUMENT UPLOAD AND EXTRACTION
 ==================================================
 
-The primary document is an insurance declaration page.
+Document upload prefills the InsuranceProfile; it does not replace user review. The primary supported document is an insurance declaration page, and the hackathon demo must use one.
 
 Also support:
 
@@ -1373,8 +1557,7 @@ When validation fails:
 Create synthetic demo documents:
 
 - Auto declaration page.
-- Renters declaration page.
-- Combined Insurance Shopping Profile.
+- Personal Auto Insurance Shopping Profile.
 - Existing renewal notice.
 
 The Insurance Shopping Profile must include:
@@ -1387,11 +1570,9 @@ The Insurance Shopping Profile must include:
 - Whether telematics is acceptable.
 - Whether monitoring programs are acceptable.
 - Whether paying in full is acceptable.
-- Maximum monthly price.
-- Maximum annual price.
 - Trade-offs requiring explicit approval.
 
-Store maximum prices only in PrivateNegotiationConstraints.
+Do not collect the post-quote negotiation target in this document. Store any later user-entered target range only in NegotiationGoal and PrivateNegotiationConstraints.
 
 ==================================================
 13. COVERAGE REVIEW
@@ -1448,8 +1629,8 @@ Its responsibilities:
 - Confirm required coverage.
 - Confirm optional preferences.
 - Ask which trade-offs require explicit approval.
-- Capture maximum price privately.
-- Never repeat the maximum price in a provider-facing summary.
+- Confirm every profile field required by the selected InsuranceLineConfig.
+- Do not ask for a negotiation target before quotes are shown.
 - Summarize the draft coverage request.
 - Tell the user final confirmation happens in the web interface.
 
@@ -1501,7 +1682,7 @@ Create a confirmation page showing:
 Require confirmation that:
 
 - The profile is accurate.
-- The agent may speak with the selected simulated providers.
+- The agent may speak with the five simulated providers selected by source-backed market research.
 - Every provider receives the same specification.
 - Verified competing offers may be truthfully used as leverage.
 - PolicyScout cannot bind coverage.
@@ -1591,27 +1772,39 @@ Do not treat these as verified quotes:
 - Search snippets.
 - Aggregator estimates.
 
-Create provider shortlist scoring based on:
+Build the Top 5 in two deterministic stages.
 
-- Product availability.
-- Geographic availability.
-- Coverage fit.
-- Public discount relevance.
-- Provider diversity.
-- Official-source confidence.
-- Reputation.
-- User preference.
-- Avoiding duplicate carrier representation.
+Stage 1: eligibility gate
 
-Shortlist at least three providers.
+- Provider offers the requested insurance line.
+- Provider serves the confirmed state and ZIP.
+- Provider can support the requested coverage at a preliminary product level.
+- Provider has usable public contact information.
+- Provider is not excluded by the user.
+- Provider is not a duplicate representation of the same carrier.
 
-Require user approval before conversations begin.
+Stage 2: ranking score
+
+- 55% normalized rating.
+- 15% review-volume confidence using a capped logarithmic scale.
+- 10% rating-source quality.
+- 5% rating-data recency.
+- 10% profile and coverage fit.
+- 5% contactability and official-source confidence.
+
+Ratings must be normalized to one 0-100 scale. A perfect score with very few reviews must not outrank a slightly lower score backed by substantial evidence without the confidence adjustment being visible.
+
+Return exactly five ranked providers when five eligible providers exist. If fewer than five exist, return all eligible providers, show a blocking warning, and never invent companies, ratings, reviews, or contact details.
+
+For each selected provider, store the rank, score breakdown, source links, retrieval timestamp, eligibility evidence, and a one-sentence selection explanation.
+
+Show the Top 5 before calls begin. The user may exclude a provider; if they do, fill the slot with the next eligible ranked provider. A single Start quote calls action confirms the final five.
 
 ==================================================
 17. DEMO PROVIDER AGENTS
 ==================================================
 
-Create three fictional provider agents.
+Create five fictional provider agents. They represent the five companies returned by deterministic mock research.
 
 --------------------------------------------------
 17.1 Harbor Assurance
@@ -1649,6 +1842,28 @@ Behavior:
 - Initially provides the highest price.
 - Offers stronger non-price terms.
 - May improve price, fees, benefits, payment terms, or quote validity after verified leverage is presented.
+
+--------------------------------------------------
+17.4 Cedar Mutual
+--------------------------------------------------
+
+Behavior:
+
+- Careful and detail-oriented.
+- Requires the complete quote-ready profile before pricing.
+- Gives a mid-range quote with strong coverage and clear itemization.
+- Treats base rates as fixed but may improve a deductible or payment term.
+
+--------------------------------------------------
+17.5 Horizon Direct
+--------------------------------------------------
+
+Behavior:
+
+- Fast and discount-focused.
+- Initially appears cheapest because some discounts are conditional.
+- Requires the Calling Agent to clarify telematics, autopay, and continuing eligibility.
+- May waive an installment fee or apply an eligible discount after a truthful request.
 
 Do not use fixed dialogue scripts.
 
@@ -1689,6 +1904,8 @@ Provider responses must change based on:
 Create a PolicyScout Calling Agent.
 
 It represents the customer during simulated provider conversations.
+
+After the Top 5 is confirmed, create exactly one first-round conversation for each provider. All five conversations must use the same ConfirmedQuoteRequest ID, version, and specification hash. A decline or failed call remains visible as a structured outcome; do not silently replace it with a fabricated quote.
 
 Opening statement:
 
@@ -1902,7 +2119,7 @@ get_provider_research
 
 Returns:
 
-- Approved ProviderResearchBrief.
+- Top 5-confirmed ProviderResearchBrief.
 - Supported research evidence.
 
 record_quote_field
@@ -1989,11 +2206,44 @@ Returns:
 
 Never returns private constraints.
 
+get_negotiation_goal
+
+Available only to the Negotiator for the active user-confirmed goal.
+
+Returns:
+
+- Goal ID.
+- User-selected quote and provider IDs.
+- Negotiation ask allowed by the disclosure policy.
+- Allowed non-price improvements and trade-offs.
+- Hard-stop instructions.
+- Whether a verified competing quote is available.
+
+It never returns an undisclosed ceiling or the encrypted goal payload.
+
+check_negotiation_goal
+
+Input:
+
+{
+  goalId,
+  proposedCost,
+  proposedTerms
+}
+
+Returns only:
+
+- target_met
+- continue_negotiating
+- hard_stop_reached
+- human_confirmation_required
+
 record_negotiation_event
 
 Input:
 
 {
+  negotiationGoalId,
   originalQuoteId,
   competingQuoteId,
   specificationHash,
@@ -2013,6 +2263,7 @@ Server-side validation must verify:
 - Workflow.
 - Conversation.
 - Provider.
+- Negotiation goal and user-selected target.
 - Request ID.
 - Specification hash.
 - Agent permissions.
@@ -2238,6 +2489,7 @@ A quote can be negotiating leverage only when:
 - It is not materially incomplete.
 - It is not expired.
 - It has not been withdrawn.
+- It is not the quote selected as the negotiation target.
 - Its coverage is equivalent or better.
 - Its price and terms are provider-confirmed.
 - A demo quote is used only within the demo workflow.
@@ -2250,6 +2502,8 @@ Select:
 
 Store why the quote was selected.
 
+Run this selector only after the user selects the target quote. Search the remaining first-round quotes for the strongest truthful leverage. If no other quote qualifies, return no_leverage_available and allow target-based negotiation without a competing claim.
+
 Do not let an LLM invent or select unsupported leverage.
 
 ==================================================
@@ -2258,13 +2512,22 @@ Do not let an LLM invent or select unsupported leverage.
 
 Create the PolicyScout Negotiator.
 
-It conducts a second-round simulated conversation.
+It conducts one second-round simulated conversation with only the provider attached to the quote explicitly selected by the user.
+
+Do not start negotiation until:
+
+- All five first-round calls have a terminal structured outcome, or the user explicitly continues after visible failures.
+- Quotes are normalized and coverage equivalence is calculated.
+- The user selects one quote on the dashboard.
+- The user enters a target price or acceptable range.
+- The user confirms disclosure policy, allowed trade-offs, and the final NegotiationGoal.
 
 It receives:
 
 - Target provider.
 - Provider’s original quote.
-- One verified competing quote.
+- User-confirmed NegotiationGoal view.
+- One verified competing quote when available.
 - Matching specification hash.
 - Provider research.
 - Allowed negotiation levers.
@@ -2273,18 +2536,22 @@ It receives:
 
 It never receives:
 
-- Maximum price.
+- Any ceiling or range value forbidden by the selected disclosure policy.
 - Encrypted private constraints.
 - Provider-private pricing configuration.
 - Unsupported competing claims.
 
-Opening:
+Opening template:
 
-“Hello, I’m PolicyScout, the AI insurance shopping assistant following up on the previous simulated quote. I have a verified competing offer for the same confirmed coverage request. I would like to ask whether any legitimate discounts, fees, payment options, coverage improvements, or other terms could improve your offer.”
+“Hello, I’m PolicyScout, the AI insurance shopping assistant following up on the previous simulated quote selected by the customer. I would like to ask whether any legitimate discounts, fees, payment options, coverage improvements, or other terms could improve your offer.”
+
+Mention a competing offer only when get_verified_competing_quote returns a valid result. Mention a target amount or range only when NegotiationGoal disclosure policy permits it.
 
 The Negotiator must:
 
 - Confirm the same quote and coverage.
+- Follow the user’s target and server-returned hard-stop instructions.
+- Use check_negotiation_goal after every changed offer.
 - State only truthful leverage.
 - Avoid bluffing.
 - Avoid invented urgency.
@@ -2301,6 +2568,7 @@ The Negotiator must:
 - Read back changed terms.
 - Record before-and-after evidence.
 - End with a structured result.
+- Record whether the final offer reached the user’s target or range.
 
 Allowed outcomes:
 
@@ -2318,7 +2586,7 @@ Allowed outcomes:
 - human_handoff_required
 - negotiation_failed
 
-At least one demo provider must make a measurable concession because of verified leverage.
+At least one demo provider must make a measurable concession because of a legitimate target request and/or verified leverage.
 
 The concession must be triggered by private economic rules, not a fixed dialogue script.
 
@@ -2386,9 +2654,24 @@ Pages:
 
 Authentication:
 
+- Sign-up.
 - Email magic link.
 - GitHub OAuth when configured.
 - Demo login.
+- Auth callback, session recovery, logout, and protected-route behavior.
+- Expired-link, invalid-session, loading, and retry states.
+
+Profile Setup:
+
+- Resumable step-by-step onboarding.
+- Insurance-line selection.
+- Personal, location, driver, vehicle, insurance-history, coverage, and discount sections for the personal auto demo.
+- Inline explanation of why each pricing field is required.
+- Required, optional, sensitive, and provider-shared indicators.
+- Profile completeness percentage and explicit missing fields.
+- Optional declaration-page prefill.
+- ElevenLabs gap-filling controls.
+- Review and confirm action.
 
 Dashboard:
 
@@ -2399,6 +2682,8 @@ Dashboard:
 - Provider count.
 - Quote count.
 - Potential savings.
+- Profile status and resume action.
+- Active Top 5 research, call, and negotiation status.
 - New workflow.
 - Reset demo.
 
@@ -2463,9 +2748,12 @@ Research:
 - Public programs and discounts.
 - Research questions.
 - License-verification state.
-- Ratings.
+- Original rating, scale, source, normalized rating, review count, and confidence.
+- Top 5 rank and score breakdown.
+- One-sentence selection explanation.
 - Sources.
-- Approve or exclude controls.
+- Exclude and backfill controls.
+- One Start quote calls action for the final five.
 
 Conversations:
 
@@ -2484,15 +2772,19 @@ Conversations:
 - Outcome.
 - Retry.
 
-Show three cards:
+Show five cards:
 
 - Harbor Assurance.
 - Granite Coverage Group.
 - Summit Insurance Partners.
+- Cedar Mutual.
+- Horizon Direct.
 
 Quotes:
 
 - Side-by-side normalized comparison.
+- One explicit Select for negotiation control per comparable quote.
+- System recommendation badge that does not change user selection.
 - Provider.
 - Quote type.
 - Policy term.
@@ -2513,12 +2805,25 @@ Quotes:
 - Completeness.
 - Equivalence.
 - Red flags.
+- First-round terminal status for providers without a complete quote.
+
+After a quote is selected, show a Negotiation Goal panel:
+
+- Selected provider and original quote.
+- Target amount or acceptable range with matching billing period.
+- Optional non-price goals.
+- Allowed trade-offs and hard stops.
+- Disclosure policy: do not reveal ceiling, reveal target only, or reveal range.
+- Verified leverage preview when another equivalent quote qualifies.
+- Final review and Confirm negotiation action.
 
 Negotiation:
 
-- Target provider.
+- User-selected target provider.
 - Original quote.
-- Verified competing quote.
+- Confirmed target amount or range.
+- Disclosure policy.
+- Verified competing quote when available.
 - Reason leverage is valid.
 - Start negotiation.
 - Live transcript.
@@ -2527,10 +2832,12 @@ Negotiation:
 - Savings.
 - Evidence.
 - Outcome.
+- Target met or not met state.
 
 Final Report:
 
 - Recommended offer.
+- User-selected negotiation offer and whether it differed from the recommendation.
 - Ranked alternatives.
 - Current-policy baseline.
 - Cost comparison.
@@ -2590,13 +2897,16 @@ Works without:
 Includes:
 
 - Synthetic user.
+- Complete synthetic personal auto InsuranceProfile.
 - Synthetic documents.
 - Mock extraction.
-- Mock research.
+- Source-backed mock research with more than five candidates and deterministic Top 5 ranking.
 - Simulated dynamic conversation turns.
 - Stored transcripts.
-- Structured quote fixtures.
+- Five structured first-round outcomes and quote fixtures.
 - Deterministic normalization.
+- Separate system recommendation and user-selected quote.
+- User-entered NegotiationGoal with target range.
 - Verified leverage.
 - Rule-based concession.
 - Complete recommendation.
@@ -2691,6 +3001,8 @@ NEXT_PUBLIC_ELEVENLABS_NEGOTIATOR_AGENT_ID=
 NEXT_PUBLIC_ELEVENLABS_HARBOR_AGENT_ID=
 NEXT_PUBLIC_ELEVENLABS_GRANITE_AGENT_ID=
 NEXT_PUBLIC_ELEVENLABS_SUMMIT_AGENT_ID=
+NEXT_PUBLIC_ELEVENLABS_CEDAR_AGENT_ID=
+NEXT_PUBLIC_ELEVENLABS_HORIZON_AGENT_ID=
 ELEVENLABS_WEBHOOK_SECRET=
 
 TAVILY_API_KEY=
@@ -2713,67 +3025,78 @@ Never expose ELEVENLABS_API_KEY, OPENAI_API_KEY, TAVILY_API_KEY, GOOGLE_PLACES_A
 
 Write unit tests proving:
 
-1. Declaration pages extract into CoverageProfile.
-2. Unknown fields remain null.
-3. Conflicting fields remain conflicting.
-4. Voice and document data merge correctly.
-5. Private constraints are stored separately.
-6. Maximum price does not appear in provider-safe JSON.
-7. Maximum price does not appear in Calling Agent context.
-8. Maximum price does not appear in Negotiator context.
-9. Confirmation creates a deterministic specification hash.
-10. Material changes create a new version and hash.
-11. All provider conversations use the same hash.
-12. Research claims include citations.
-13. Marketing savings are not treated as quotes.
-14. Monthly premiums and fees normalize correctly.
-15. Conditional discounts are not counted as guaranteed savings.
-16. Lower coverage is non-equivalent.
-17. Missing entities make quotes non-comparable.
-18. Health premium is not treated as total health cost.
-19. Only verified quotes may be leverage.
-20. Different specification hashes cannot be leverage.
-21. Negotiation before-and-after values are preserved.
-22. Repeated conversation completion events do not duplicate quotes.
-23. Completed conversations have structured outcomes.
-24. Invalid workflow transitions are rejected.
-25. Users cannot access another user’s workflow.
-26. Private files require signed URLs.
-27. ElevenLabs conversations work without OpenAI.
-28. Mock mode works without credentials.
-29. Each provider uses a distinct agent ID.
-30. Client-tool events validate correctly.
-31. Calling Agent cannot access provider-private rules.
-32. Final recommendations cite evidence.
+1. Required personal auto fields determine profile completeness.
+2. Research and quote calls are blocked until the profile is quote-ready and confirmed.
+3. Declaration pages extract into CoverageProfile.
+4. Unknown fields remain null and conflicts remain visible.
+5. Form, voice, and document data merge with provenance.
+6. Private constraints are stored separately from provider-safe JSON.
+7. Rating scales normalize deterministically.
+8. Review volume, source quality, and recency affect rating confidence as specified.
+9. Ineligible providers are removed before ranking.
+10. Research returns exactly five ranked providers when five are available.
+11. Every Top 5 rank includes citations and a score explanation.
+12. Fewer than five eligible providers produces a warning without invented data.
+13. Confirmation creates a deterministic specification hash.
+14. Material profile changes create a new version and hash.
+15. All five first-round provider conversations use the same hash.
+16. Marketing savings and average prices are not treated as quotes.
+17. Monthly premiums, fees, and conditional discounts normalize correctly.
+18. Lower coverage and missing entities are non-equivalent.
+19. The system recommendation does not auto-select a negotiation target.
+20. Negotiation cannot start without an explicit user-selected quote and confirmed NegotiationGoal.
+21. The target provider matches the selected quote’s provider.
+22. Only verified quotes with the same hash may be leverage.
+23. The target quote cannot be used as its own competing leverage.
+24. An unavailable competing quote does not cause a fabricated leverage claim.
+25. The undisclosed ceiling never appears in provider-safe JSON, Calling Agent context, transcript, or Negotiator-visible fields.
+26. Disclosure policy reveals only the user-authorized target information.
+27. Negotiation before-and-after values and target-met status are preserved.
+28. Repeated conversation completion events do not duplicate quotes.
+29. Every completed conversation has a structured outcome.
+30. Invalid workflow transitions are rejected.
+31. Users cannot access another user’s profile or workflow.
+32. Private files require signed URLs.
+33. ElevenLabs conversations work without OpenAI.
+34. Mock mode works without credentials.
+35. Each of the five providers uses a distinct agent ID.
+36. Client-tool events validate correctly.
+37. Calling Agent cannot access provider-private rules.
+38. Final recommendations cite evidence.
 
 Write integration tests for:
 
 - Document upload.
 - Document extraction.
+- Authentication and session restoration.
 - Profile merge.
+- Profile completeness and confirmation.
 - Confirmation.
 - Research.
-- Provider approval.
+- Top 5 ranking and provider backfill.
+- Five-call fan-out and partial failure handling.
 - Conversation creation.
 - Tool events.
 - Quote normalization.
+- User quote selection and NegotiationGoal confirmation.
 - Negotiation event.
 - Recommendation generation.
 
 Write a Playwright test covering:
 
 1. Demo login.
-2. Create workflow.
-3. Upload declaration page.
-4. Review extraction.
-5. Complete intake.
-6. Confirm specification.
-7. Run research.
-8. Approve providers.
-9. Complete three demo provider conversations.
-10. View normalized quotes.
-11. Run negotiation.
-12. View final recommendation.
+2. Complete or resume the personal auto profile wizard.
+3. Create workflow and upload a declaration page.
+4. Review extraction and complete voice intake.
+5. Confirm the quote-ready profile and provider-safe specification.
+6. Run research and inspect the source-backed Top 5.
+7. Start five quote conversations.
+8. Reach five terminal structured outcomes.
+9. View normalized quotes and the separate system recommendation.
+10. Select one quote for negotiation.
+11. Enter a target range, disclosure policy, and allowed trade-offs.
+12. Confirm and run negotiation with the selected provider only.
+13. View target status, before-and-after evidence, and final recommendation.
 
 ==================================================
 35. EVALUATION HARNESS
@@ -2784,7 +3107,10 @@ Create golden simulated conversations.
 Evaluate:
 
 - AI disclosure.
+- Profile completeness before calls.
+- Top 5 rating normalization, source evidence, and deterministic order.
 - Correct specification hash.
+- Same hash across all five first-round calls.
 - Required questions asked.
 - Premium components captured.
 - Fees captured.
@@ -2793,8 +3119,9 @@ Evaluate:
 - Low outlier flagged.
 - Structured outcome produced.
 - Verified leverage only.
-- Concession caused by leverage.
-- Maximum price remained private.
+- Negotiation target matches the quote selected by the user.
+- Concession caused by a legitimate target request and/or leverage.
+- Undisclosed ceiling remained private.
 
 Create:
 
@@ -2875,29 +3202,26 @@ Create docs/security.md with:
 
 Create docs/demo-script.md with this five-minute demo:
 
-0:00–0:30:
-Explain the insurance shopping problem.
+0:00–0:25:
+Explain the insurance shopping problem, log in, and show the saved profile.
 
-0:30–1:05:
-Upload declaration page and show structured extraction.
+0:25–1:10:
+Upload the declaration page, show structured extraction, and use ElevenLabs to fill one missing profile field.
 
-1:05–1:35:
-Show ElevenLabs intake and user confirmation.
+1:10–1:45:
+Confirm the quote-ready profile, run market research, and show the source-backed Top 5 ranking.
 
-1:35–2:00:
-Show market research with citations.
+1:45–2:45:
+Start all five first-round conversations and show highlights across at least three distinct provider behaviors.
 
-2:00–3:10:
-Show highlights from three distinct provider conversations.
+2:45–3:30:
+Show normalized quotes, red flags, and the system recommendation; then make a separate user selection.
 
-3:10–3:40:
-Show normalized comparison and red flags.
+3:30–4:20:
+Enter a target range and disclosure policy, then show the selected-provider negotiation and concession.
 
-3:40–4:25:
-Show the second-round negotiation and concession.
-
-4:25–5:00:
-Show evidence-backed recommendation and savings.
+4:20–5:00:
+Show the verified before-and-after result, final ranking, evidence, and savings.
 
 ==================================================
 38. DEFINITION OF DONE
@@ -2909,23 +3233,28 @@ The project is complete only when:
 - Fully mocked demo mode works without credentials.
 - Live ElevenLabs mode works without Twilio.
 - ElevenLabs conversations do not require OpenAI.
+- A user can sign up or use demo login, restore a session, and log out.
+- Profile setup can be saved and resumed.
+- The personal auto profile cannot become quote-ready while required pricing fields are missing.
 - A user can upload a declaration page.
 - The document becomes a structured CoverageProfile.
 - Evidence and confidence are displayed.
 - Intake can be completed through ElevenLabs.
 - One provider-safe request is confirmed.
 - A deterministic specification hash is generated.
-- Research produces cited provider briefs.
-- Three providers are approved.
-- Three distinct provider conversations produce structured outcomes.
-- At least two comparable quotes exist.
+- Research produces cited provider briefs and a deterministic Top 5 ranking.
+- Exactly five eligible providers are confirmed when five are available.
+- Five first-round provider conversations produce structured terminal outcomes using the same specification hash.
+- The mocked happy path displays five quote rows and at least three comparable quotes.
 - Quotes normalize into one schema.
 - Coverage differences are detected.
 - Conditional discounts are handled correctly.
-- Verified leverage is selected.
-- A second-round negotiation occurs.
-- A provider changes price or terms because of verified leverage.
-- Maximum price is never disclosed.
+- The system recommendation is visibly separate from the user’s selected negotiation quote.
+- The user confirms a target amount or range and disclosure policy.
+- Verified leverage is selected from a different comparable quote when available.
+- A second-round negotiation occurs only with the user-selected provider.
+- A provider changes price or terms because of a legitimate target request and/or verified leverage.
+- An undisclosed ceiling is never exposed to the provider.
 - The report ranks comparable quotes.
 - Material claims link to evidence.
 - Real insurance activity is clearly labeled unsupported.
@@ -2949,20 +3278,23 @@ Phase 1:
 - Create migrations.
 - Configure authentication and RLS.
 - Seed demo user.
+- Build sign-up, login, callback, session restore, protected routes, and logout.
 
 Phase 2:
 
+- Build the personal auto profile wizard and completeness gate.
 - Build upload.
 - Build mock and optional OpenAI extraction.
 - Build coverage review.
+- Build voice-assisted gap filling.
 - Build private-constraint encryption.
 - Build confirmation and hashing.
 
 Phase 3:
 
 - Build research adapters.
-- Build provider shortlist.
-- Build provider approval.
+- Build eligibility filters, rating normalization, and deterministic Top 5 ranking.
+- Build Top 5 review, exclusion, and backfill.
 - Seed demo research.
 
 Phase 4:
@@ -2970,7 +3302,8 @@ Phase 4:
 - Build ElevenLabs browser integration.
 - Build ConversationOrchestrator.
 - Build client tools.
-- Build three provider agents.
+- Build five provider agents with at least three distinct behaviors.
+- Build five-call fan-out and terminal-status handling.
 - Build mock conversation adapter.
 - Build transcript persistence.
 
@@ -2980,11 +3313,12 @@ Phase 5:
 - Build normalization.
 - Build equivalence.
 - Build red flags.
-- Build comparison UI.
+- Build comparison UI, system recommendation, and explicit user selection.
 
 Phase 6:
 
 - Build verified leverage.
+- Build NegotiationGoal, target range, and disclosure policy.
 - Build Negotiator.
 - Build negotiation events.
 - Build before-and-after UI.
@@ -3013,11 +3347,14 @@ Checkpoint 1: Shared contracts
 Agree on:
 
 - Workflow states.
+- InsuranceProfile.
 - CoverageProfile.
 - ConfirmedQuoteRequest.
 - ProviderResearchBrief.
+- ProviderRankingResult.
 - NormalizedQuote.
 - Evidence.
+- NegotiationGoal.
 - NegotiationEvent.
 - API error format.
 - Environment variables.
@@ -3026,11 +3363,13 @@ Checkpoint 2: Mock vertical slice
 
 Connect:
 
+- Demo authentication and synthetic profile.
 - Synthetic documents.
 - Mock extraction.
-- Mock research.
-- Mock provider conversations.
-- Mock quotes.
+- Mock Top 5 research.
+- Five mock provider conversations.
+- Five quote rows.
+- User quote selection and target range.
 - Mock negotiation.
 - Final report.
 
@@ -3058,8 +3397,9 @@ Before presenting:
 - Confirm all ElevenLabs agent IDs.
 - Keep mock fallback available.
 - Keep stored transcript fallback available.
-- Confirm maximum price never appears in provider context.
-- Confirm all providers use the same specification hash.
+- Confirm an undisclosed ceiling never appears in provider context or transcripts.
+- Confirm all five first-round providers use the same specification hash.
+- Confirm the Negotiator calls only the provider selected on the dashboard.
 - Confirm the negotiation concession occurs.
 - Confirm every recommendation has evidence.
 
@@ -3082,9 +3422,12 @@ Do not report completion until:
 - Live ElevenLabs localhost conversations are supported.
 - No Twilio code exists.
 - OpenAI remains optional.
-- Three distinct provider conversations produce structured results.
+- Login and quote-ready profile setup work end to end.
+- Top 5 research is source-backed and deterministic.
+- Five distinct provider conversations produce structured results.
+- The user selects the negotiation target and confirms a target range.
 - One verified negotiation improves a price or term.
-- The maximum acceptable price remains private.
+- Any undisclosed maximum acceptable price remains private.
 - The final report shows an evidence-backed recommendation.
 - Lint, type checking, and tests pass.
 ```
