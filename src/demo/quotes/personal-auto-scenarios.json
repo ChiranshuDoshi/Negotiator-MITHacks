@@ -1,0 +1,147 @@
+{
+  "datasetVersion": "personal-auto-v1",
+  "currency": "USD",
+  "disclaimer": "Simulated quote scenario for this provider; not supplied by the insurer and not binding.",
+  "scenarios": [
+    {
+      "scenarioId": "conditional-telematics",
+      "displayName": "Low advertised price with telematics",
+      "behaviorTag": "conditional_telematics",
+      "outcomeStatus": "complete",
+      "policyTermMonths": 12,
+      "basePremiumCents": 219600,
+      "requiredFeeCents": 4800,
+      "requiredTaxCents": 0,
+      "downPaymentCents": 24000,
+      "discounts": [
+        {
+          "name": "Telematics participation",
+          "amountCents": 24000,
+          "amountType": "fixed",
+          "applied": true,
+          "conditional": true,
+          "eligibilityConfirmed": false,
+          "continuingEligibilityRequired": true,
+          "conditions": ["Final discount depends on monitored driving behavior"]
+        }
+      ],
+      "coverageOverrides": [],
+      "paymentOptions": ["monthly", "paid_in_full"],
+      "conditions": ["Telematics enrollment required for the advertised discount"],
+      "expirationDays": 30
+    },
+    {
+      "scenarioId": "best-value-complete",
+      "displayName": "Best-value complete offer",
+      "behaviorTag": "best_value",
+      "outcomeStatus": "complete",
+      "policyTermMonths": 12,
+      "basePremiumCents": 236400,
+      "requiredFeeCents": 3600,
+      "requiredTaxCents": 0,
+      "downPaymentCents": 20000,
+      "discounts": [
+        {
+          "name": "Multi-vehicle safe-driver discount",
+          "amountCents": 18000,
+          "amountType": "fixed",
+          "applied": true,
+          "conditional": false,
+          "eligibilityConfirmed": true,
+          "continuingEligibilityRequired": false,
+          "conditions": []
+        }
+      ],
+      "coverageOverrides": [],
+      "paymentOptions": ["monthly", "quarterly", "paid_in_full"],
+      "conditions": [],
+      "expirationDays": 30
+    },
+    {
+      "scenarioId": "stronger-coverage",
+      "displayName": "Higher price with stronger coverage",
+      "behaviorTag": "stronger_coverage",
+      "outcomeStatus": "complete",
+      "policyTermMonths": 12,
+      "basePremiumCents": 270000,
+      "requiredFeeCents": 2400,
+      "requiredTaxCents": 0,
+      "downPaymentCents": 22000,
+      "discounts": [
+        {
+          "name": "Paid-in-full discount",
+          "amountCents": 12000,
+          "amountType": "fixed",
+          "applied": true,
+          "conditional": false,
+          "eligibilityConfirmed": true,
+          "continuingEligibilityRequired": false,
+          "conditions": []
+        }
+      ],
+      "coverageOverrides": [
+        {
+          "coverageCode": "bodily_injury_liability",
+          "limitCents": 25000000,
+          "exclusions": []
+        },
+        {
+          "coverageCode": "property_damage_liability",
+          "limitCents": 25000000,
+          "exclusions": []
+        },
+        {
+          "coverageCode": "collision",
+          "deductibleCents": 50000,
+          "exclusions": []
+        },
+        {
+          "coverageCode": "comprehensive",
+          "deductibleCents": 25000,
+          "exclusions": []
+        }
+      ],
+      "paymentOptions": ["monthly", "paid_in_full"],
+      "conditions": [],
+      "expirationDays": 45
+    },
+    {
+      "scenarioId": "large-down-payment",
+      "displayName": "Low premium with large upfront payment",
+      "behaviorTag": "large_down_payment",
+      "outcomeStatus": "complete",
+      "policyTermMonths": 12,
+      "basePremiumCents": 204000,
+      "requiredFeeCents": 24000,
+      "requiredTaxCents": 0,
+      "downPaymentCents": 65000,
+      "discounts": [],
+      "coverageOverrides": [],
+      "paymentOptions": ["monthly"],
+      "conditions": ["Large first payment required before monthly installments begin"],
+      "expirationDays": 21
+    },
+    {
+      "scenarioId": "underwriting-pending",
+      "displayName": "Indicative offer pending underwriting",
+      "behaviorTag": "underwriting_pending",
+      "outcomeStatus": "incomplete",
+      "policyTermMonths": 12,
+      "basePremiumCents": 198000,
+      "requiredFeeCents": 0,
+      "requiredTaxCents": 0,
+      "downPaymentCents": null,
+      "discounts": [],
+      "coverageOverrides": [
+        {
+          "coverageCode": "comprehensive",
+          "included": false,
+          "exclusions": ["Comprehensive coverage not confirmed"]
+        }
+      ],
+      "paymentOptions": ["monthly"],
+      "conditions": ["Price may change after underwriting review"],
+      "expirationDays": null
+    }
+  ]
+}
