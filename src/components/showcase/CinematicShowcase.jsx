@@ -138,14 +138,16 @@ export function CinematicShowcase({ onSkip, onLogin }) {
   const commandThemeProgress = smoothStep((scrollProgress - 0.82) / 0.18);
   const stageShadeOpacity = interpolate(scrollProgress, [0, 0.36, 0.62, 0.9], [0.1, 0.08, 0.14, 0.68]);
   const navOpacity = interpolate(scrollProgress, [0, 0.74, 0.84], [1, 1, 0]);
+  // Hide the brand logo while the car cabin scene is on screen so it reads clean.
+  const logoOpacity = interpolate(scrollProgress, [0.3, 0.355], [1, 0]);
   const skipOpacity = interpolate(scrollProgress, [0, 0.75, 0.84], [1, 1, 0]);
 
   return (
     <section className="cinematic" ref={stageRef} aria-label="PolicyScout product introduction">
       <div className="cinematic-sticky">
         <header className="showcase-nav" style={{ opacity: navOpacity }}>
-          <button className="brand-lockup" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="PolicyScout home">
-            <span className="brand-mark">PS</span>
+          <button className="brand-lockup" type="button" style={{ opacity: logoOpacity, pointerEvents: logoOpacity < 0.05 ? "none" : "auto" }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="PolicyScout home">
+            <span className="brand-mark" aria-hidden="true" />
             <span>PolicyScout</span>
           </button>
           <nav className="showcase-links" aria-label="Primary navigation">

@@ -176,6 +176,64 @@ function VehicleView({ profile, setProfile, onStart }) {
   );
 }
 
+// Recorded demo call audio, mapped by row position. Row 1 → $1,485 quote,
+// row 3 → $1,199 quote. The other rows expose the control but have no clip.
+const CALL_AUDIO = ["/assets/quote-1.m4a", null, "/assets/quote-3.m4a", null, null];
+
+function CallAudioPlayer({ src, label }) {
+  const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+    const onTime = () => setProgress(audio.duration ? audio.currentTime / audio.duration : 0);
+    const onEnd = () => {
+      setPlaying(false);
+      setProgress(0);
+    };
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("ended", onEnd);
+    audio.addEventListener("pause", () => setPlaying(false));
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("ended", onEnd);
+    };
+  }, []);
+
+  function toggle() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      // Only one clip should play at a time across the board.
+      document.querySelectorAll("audio[data-call-audio]").forEach((other) => {
+        if (other !== audio) other.pause();
+      });
+      audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    } else {
+      audio.pause();
+      setPlaying(false);
+    }
+  }
+
+  const disabled = !src;
+  return (
+    <div className={disabled ? "call-audio call-audio--empty" : "call-audio"}>
+      <button
+        type="button"
+        className="call-audio-button"
+        onClick={toggle}
+        aria-label={disabled ? `Play ${label} recording (no clip available)` : playing ? `Pause ${label} recording` : `Play ${label} recording`}
+      >
+        {playing ? <Pause size={11} weight="fill" /> : <Play size={11} weight="fill" />}
+      </button>
+      <Waveform active={playing} compact progress={disabled ? 0 : progress} label={disabled ? "No recording available" : `${label} recording waveform`} />
+      {src && <audio ref={audioRef} src={src} preload="none" data-call-audio />}
+    </div>
+  );
+}
+
 function CallingView({ calls, complete, onContinue }) {
   const completedCount = calls.filter((call) => call.status === "Verified").length;
   const progress = (completedCount / calls.length) * 100;
@@ -197,7 +255,7 @@ function CallingView({ calls, complete, onContinue }) {
               <div className="call-provider"><span className="provider-monogram">{call.name.slice(0, 1)}</span><span><strong>{call.name}</strong><small>Auto · 12-month policy</small></span></div>
               <div className="rating-source"><strong><Star size={13} weight="fill" /> {call.rating}</strong><SourceLabel type="declaration">Demo rating index</SourceLabel></div>
               <div className="eligibility-state"><Check size={13} weight="bold" /><span><strong>Austin, TX</strong><small>Eligible</small></span></div>
-              <div className="call-state-cell">{call.status === "Calling" && <Waveform active compact progress={0.48} label={`${call.name} call in progress`} />}<StatusBadge status={call.status} /></div>
+              <div className="call-state-cell"><CallAudioPlayer src={CALL_AUDIO[index] ?? null} label={call.name} /><StatusBadge status={call.status} /></div>
               <span className="call-price">{call.status === "Verified" ? <><strong>{formatCurrency(call.annual)}</strong><small>4 facts captured</small></> : call.status === "Calling" ? <><span className="pending-line" /><small>Collecting quote…</small></> : <><span className="pending-line pending-line--muted" /><small>Waiting for call</small></>}</span>
             </article>
           ))}

@@ -42,7 +42,7 @@ function SignupModal({ open, onClose, onSignedUp }) {
           <X size={20} weight="bold" />
         </button>
         <div className="brand-lockup brand-lockup--dark">
-          <span className="brand-mark">PS</span>
+          <span className="brand-mark" aria-hidden="true" />
           <span>PolicyScout</span>
         </div>
         <p className="eyebrow">Create your account</p>

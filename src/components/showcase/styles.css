@@ -125,20 +125,18 @@ h3,
 }
 
 .brand-mark {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: 7px;
-  background: rgba(9, 28, 25, 0.62);
+  display: block;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
   color: var(--mint);
-  font-size: 13px;
+  background: currentColor;
+  -webkit-mask: url("/assets/policyscout-voice-guardrail.webp") center / 145% 145% no-repeat;
+  mask: url("/assets/policyscout-voice-guardrail.webp") center / 145% 145% no-repeat;
 }
 
 .brand-lockup--dark .brand-mark {
-  border-color: #16302c;
-  background: #13211f;
+  color: var(--teal);
 }
 
 .primary-button,
@@ -902,9 +900,8 @@ h3,
 }
 
 .full-command-center .brand-mark {
-  border-color: var(--command-mark-border, rgba(255, 255, 255, 0.38));
-  background: var(--command-mark-bg, rgba(9, 28, 25, 0.62));
   color: var(--command-accent, var(--mint));
+  background: currentColor;
 }
 
 .full-command-title .scene-index {
@@ -3448,11 +3445,10 @@ h3,
 }
 
 .demo-sidebar .brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-  background: #17201f;
-  font-size: 10px;
+  width: 32px;
+  height: 32px;
+  color: #087b70;
+  background: currentColor;
 }
 
 .demo-sidebar .brand-lockup small {
@@ -4346,6 +4342,47 @@ h3,
 .call-state-cell .waveform {
   width: 45px;
   height: 23px;
+}
+
+.call-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.call-audio-button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #087b70;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.call-audio-button:hover:not(:disabled) {
+  background: #0a6b62;
+}
+
+.call-audio-button:disabled {
+  background: #dfe4e2;
+  color: #a2acab;
+  cursor: default;
+}
+
+.call-audio .waveform {
+  width: 42px;
+  height: 20px;
+}
+
+.call-audio--empty .waveform {
+  opacity: 0.45;
 }
 
 .call-price {

@@ -4344,6 +4344,47 @@ h3,
   height: 23px;
 }
 
+.call-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.call-audio-button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #087b70;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.call-audio-button:hover:not(:disabled) {
+  background: #0a6b62;
+}
+
+.call-audio-button:disabled {
+  background: #dfe4e2;
+  color: #a2acab;
+  cursor: default;
+}
+
+.call-audio .waveform {
+  width: 42px;
+  height: 20px;
+}
+
+.call-audio--empty .waveform {
+  opacity: 0.45;
+}
+
 .call-price {
   display: grid;
   justify-items: end;
