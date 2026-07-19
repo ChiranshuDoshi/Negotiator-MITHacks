@@ -32,10 +32,7 @@ function envValue(name: string): string | undefined {
 
 /** True when ElevenLabs is configured to run the in-app voice negotiation. */
 export function isLiveNegotiationConfigured(): boolean {
-  return (
-    process.env.NODE_ENV !== "production" &&
-    Boolean(envValue("ELEVENLABS_API_KEY") && envValue("ELEVENLABS_NEGOTIATOR_AGENT_ID"))
-  );
+  return Boolean(envValue("ELEVENLABS_API_KEY") && envValue("ELEVENLABS_NEGOTIATOR_AGENT_ID"));
 }
 
 interface CallConfig {

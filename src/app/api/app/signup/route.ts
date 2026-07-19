@@ -15,9 +15,9 @@ const SignupSchema = z.object({
 export async function POST(request: Request): Promise<Response> {
   try {
     const body = SignupSchema.parse(await request.json());
-    const account = createAccount(body.displayName, body.email);
+    const account = await createAccount(body.displayName, body.email);
     await setAccountCookie(account.id);
-    const workflow = getWorkflow(account.workflowId);
+    const workflow = await getWorkflow(account.workflowId);
     if (!workflow) throw new Error("workflow was not created");
     return jsonOk({
       account: { id: account.id, displayName: account.displayName, email: account.email },

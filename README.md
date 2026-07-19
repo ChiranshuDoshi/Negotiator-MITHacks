@@ -17,6 +17,12 @@ corepack pnpm dev
 
 Set `TAVILY_API_KEY` only for live research. Set `POLICYSCOUT_INTERNAL_API_KEY` to a strong server-only value for trusted quote, negotiation, recommendation, and paid live-research requests. Mock research works without credentials.
 
+## Vercel deployment
+
+Add the Upstash Redis integration from the Vercel Marketplace to the Vercel project. Ensure its `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables apply to both **Production** and **Preview**; the app also supports the standard `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` names. Account and workflow state persists for seven days.
+
+Set the existing `ELEVENLABS_API_KEY` and `ELEVENLABS_NEGOTIATOR_AGENT_ID` variables in those same environments to enable live production negotiations. For matching local behavior, run `vercel env pull` or securely copy the relevant values into local environment files. Redeploy after changing environment variables. Redis credentials and ElevenLabs API keys remain server-side; never expose them to the browser.
+
 ## Person 3 ElevenLabs setup
 
 Set `ELEVENLABS_API_KEY` in `.env`. The key needs **ElevenAgents: Write** and **Text to Speech: Access**. Inspect the planned configuration first, then apply it:

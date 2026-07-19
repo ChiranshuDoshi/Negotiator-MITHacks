@@ -33,6 +33,7 @@
     "@fontsource/manrope": "5.2.8",
     "@phosphor-icons/react": "^2.1.10",
     "@tavily/core": "0.7.6",
+    "@upstash/redis": "1.36.3",
     "motion": "^12.42.2",
     "next": "16.2.10",
     "react": "19.2.7",

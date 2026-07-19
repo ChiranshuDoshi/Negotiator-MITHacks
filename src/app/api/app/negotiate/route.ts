@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { negotiate, toClientSnapshot } from "@/backend/app/orchestrator";
+import { saveWorkflow } from "@/backend/app/store";
 
 import { appErrorResponse, jsonOk, requireContext } from "../_lib";
 
@@ -17,6 +18,7 @@ export async function POST(request: Request): Promise<Response> {
     const { account, workflow } = await requireContext();
     const body = NegotiateSchema.parse(await request.json());
     negotiate(workflow, body.targetAmountCents, body.selectedQuoteId);
+    await saveWorkflow(workflow);
     return jsonOk({ snapshot: toClientSnapshot(workflow, account) });
   } catch (error) {
     return appErrorResponse(error);
