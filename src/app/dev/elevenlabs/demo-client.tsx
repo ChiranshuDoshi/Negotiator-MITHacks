@@ -7,7 +7,7 @@ import {
   useDemoConversation,
   type DemoConversationRequest,
   type NegotiationReference,
-} from "@/integrations/elevenlabs/use-demo-conversation";
+} from "./use-demo-conversation";
 
 type Purpose = DemoConversationRequest["purpose"];
 

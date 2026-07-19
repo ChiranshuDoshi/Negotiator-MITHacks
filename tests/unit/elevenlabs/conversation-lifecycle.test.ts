@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createConversationLifecycleCoordinator } from "@/integrations/elevenlabs/use-demo-conversation";
+import { createConversationLifecycleCoordinator } from "@/app/dev/elevenlabs/use-demo-conversation";
 
 describe("conversation lifecycle coordinator", () => {
   it("invalidates callbacks from older start generations", () => {

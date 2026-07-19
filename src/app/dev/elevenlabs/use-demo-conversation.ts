@@ -7,7 +7,7 @@ import type {
   ConversationState,
   SafeNegotiationContext,
   TranscriptEntry,
-} from "@/server/services/conversations";
+} from "@/backend/negotiator/services/conversations";
 
 export interface NegotiationReference {
   readonly workflowId: string;
