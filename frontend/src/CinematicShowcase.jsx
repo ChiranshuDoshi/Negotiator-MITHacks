@@ -135,6 +135,7 @@ export function CinematicShowcase({ onSkip, onLogin }) {
   const dashboardScaleY = interpolate(revealProgress, [0, 1], [commandRect.height / viewportSize.height, 1]);
   const dashboardTranslateX = (commandRect.centerX - viewportSize.width / 2) * (1 - revealProgress);
   const dashboardTranslateY = (commandRect.centerY - viewportSize.height / 2) * (1 - revealProgress);
+  const commandThemeProgress = smoothStep((scrollProgress - 0.82) / 0.18);
   const stageShadeOpacity = interpolate(scrollProgress, [0, 0.36, 0.62, 0.9], [0.1, 0.08, 0.14, 0.68]);
   const navOpacity = interpolate(scrollProgress, [0, 0.74, 0.84], [1, 1, 0]);
   const skipOpacity = interpolate(scrollProgress, [0, 0.75, 0.84], [1, 1, 0]);
@@ -171,6 +172,7 @@ export function CinematicShowcase({ onSkip, onLogin }) {
 
         <div className="dashboard-reveal" style={{ opacity: revealOpacity, clipPath: revealClip }}>
           <FullCommandCenter
+            themeProgress={commandThemeProgress}
             style={{ transform: `translate(${dashboardTranslateX}px, ${dashboardTranslateY}px) scale(${dashboardScaleX}, ${dashboardScaleY})` }}
           />
         </div>

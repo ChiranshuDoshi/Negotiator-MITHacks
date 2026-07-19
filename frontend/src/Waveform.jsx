@@ -8,7 +8,14 @@ const AMPLITUDES = [
   0.4, 0.76, 0.6, 0.86, 0.48, 0.72, 0.38, 0.64,
 ];
 
-export function Waveform({ active = false, progress = 0.62, compact = false, label = "Negotiation audio waveform" }) {
+export function Waveform({
+  active = false,
+  progress = 0.62,
+  compact = false,
+  playedColor = "#71e0c1",
+  unplayedColor = "rgba(213, 226, 221, 0.28)",
+  label = "Negotiation audio waveform",
+}) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -42,7 +49,7 @@ export function Waveform({ active = false, progress = 0.62, compact = false, lab
         const x = index * (barWidth + gap);
         const y = (height - barHeight) / 2;
         const played = index / (AMPLITUDES.length - 1) <= progress;
-        context.fillStyle = played ? "#71e0c1" : "rgba(213, 226, 221, 0.28)";
+        context.fillStyle = played ? playedColor : unplayedColor;
         context.beginPath();
         context.roundRect(x, y, barWidth, barHeight, barWidth / 2);
         context.fill();
@@ -53,7 +60,7 @@ export function Waveform({ active = false, progress = 0.62, compact = false, lab
 
     draw();
     return () => window.cancelAnimationFrame(frameId);
-  }, [active, compact, progress]);
+  }, [active, compact, playedColor, progress, unplayedColor]);
 
   return <canvas className={compact ? "waveform waveform--compact" : "waveform"} ref={canvasRef} role="img" aria-label={label} />;
 }
