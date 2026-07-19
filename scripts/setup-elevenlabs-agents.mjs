@@ -31,7 +31,9 @@ record_negotiation_event is browser-side, human-review-only improved-terms recor
 
 Call record_negotiation_event at most once, and only after the provider explicitly confirms every improved term: the final policy-period cost, derived monthly effective cost, unchanged coverage, exact concession, added fees, and binding status. coverageUnchanged must be true. addedFeesCents may be 0 only after explicit confirmation that there are no added fees. Never infer, calculate, assume, or invent a tool value.
 
-Give one final verified readback and wait for provider confirmation before recording. After confirmation, close once. If the provider says “that is correct” or repeats the confirmation, acknowledge briefly; do not repeat the full summary or call the tool again. Never record a mock, fixture, inferred transcript result, or unverified term.`;
+Give one final verified readback and wait for provider confirmation before recording. After confirmation, close once. If the provider says “that is correct” or repeats the confirmation, acknowledge briefly; do not repeat the full summary or call the tool again. Never record a mock, fixture, inferred transcript result, or unverified term.
+
+Hard anti-loop rule: read the final verified summary at most once. Treat any single affirmative from the provider (for example "yes", "correct", "that works", "sounds good", or "go ahead") as confirmation of every summarized term at once. On that first affirmative, immediately call record_negotiation_event exactly once using the figures from your own summary, then say one short closing sentence and stop. Never re-read or re-summarize the terms, never ask the provider to confirm terms one at a time, and never seek confirmation twice. Once you have read the summary a single time, you may only record and close, or close with no change; never summarize again.`;
 
 const VOICE_SMOKE_PROMPT = `You are PolicyScout's private voice smoke-test agent. Reply briefly, clearly, and without collecting personal information.`;
 const DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
@@ -140,11 +142,16 @@ function agentBody(name, prompt, voiceId, tools = []) {
         prompt: { prompt, ...(negotiator ? NEGOTIATOR_MODEL_CONFIG : quoteCaller ? QUOTE_CALLER_MODEL_CONFIG : {}), ...(tools.length ? { tools } : {}) },
       },
       ...(negotiator ? { turn: NEGOTIATOR_TURN_CONFIG } : {}),
-      tts: { voiceId },
+      tts: { voiceId, speed: 1.2 },
     },
     platformSettings: {
       auth: { enableAuth: true },
-      privacy: { recordVoice: false, deleteAudio: true, deleteTranscriptAndPii: true, retentionDays: 0 },
+      // Record + retain only the negotiator so its call recording and transcript
+      // can be fetched into the dashboard. The other agents keep the
+      // privacy-preserving defaults (no recording, zero retention).
+      privacy: negotiator
+        ? { recordVoice: true, deleteAudio: false, deleteTranscriptAndPii: false, retentionDays: 30 }
+        : { recordVoice: false, deleteAudio: true, deleteTranscriptAndPii: true, retentionDays: 0 },
     },
   };
 }

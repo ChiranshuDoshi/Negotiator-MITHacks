@@ -398,7 +398,6 @@ export function useDemoConversation() {
         quote_provider_name: body.session.quoteCollection.providerName,
         quote_profile_brief: body.session.quoteCollection.providerSafeBrief,
       } : body.session.negotiation ? {
-      const dynamicVariables = body.session.negotiation ? {
         user_display_name: body.session.negotiation.userDisplayName,
         selected_provider_name: body.session.negotiation.selectedProviderName,
         selected_provider_id: body.session.negotiation.targetProviderId,
