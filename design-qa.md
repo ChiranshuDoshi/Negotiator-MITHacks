@@ -27,6 +27,12 @@ Evidence:
 - `frontend/qa/policyscout-spatial-reveal-mid.png`
 - `frontend/qa/infotainment-alignment-comparison.jpg`
 - `frontend/qa/design-comparison.jpg`
+- `frontend/qa/theme-handoff-mid.png`
+- `frontend/qa/theme-handoff-boundary.png`
+- `frontend/qa/theme-handoff-demo-reveal.png`
+- `frontend/qa/theme-handoff-comparison.jpg`
+- `frontend/qa/theme-handoff-compact-final.png`
+- `frontend/qa/theme-handoff-gap-fix-comparison.jpg`
 
 ## Interaction Verification
 
@@ -42,6 +48,7 @@ Evidence:
 - Exterior and cabin segments each preserve a monotonic center-axis push because every segment holds one raster source.
 - The rear-window handoff reaches a dark threshold before the cabin source appears, preventing double-car and double-seat exposure.
 - The same dark result DOM is visible in the physical screen, at the mid-scale state, and at full viewport size; reverse scroll returns through the same transforms.
+- A `96px` feathered edge attached to the real demo moves upward with the dashboard itself. It bridges the dark result to the demo's exact `#f3f5f6` background without masking the result or creating a contentless transition band.
 - Desktop horizontal overflow: `0px`.
 - The demo jump lands at `demoTop: 0`; the vehicle WebP loads at `1448x1086` and no image reports a failed intrinsic size.
 
@@ -60,6 +67,7 @@ Evidence:
 - P2: the light result dashboard looked like a floating overlay during expansion. Reused one dark result DOM from the physical infotainment bounds through the full viewport, with continuous X/Y scale and clip-path interpolation.
 - P2: the result UI initially appeared only near the end of the cabin push and used fixed bounds, so it drifted away from the physical screen during zoom. Measured the source display's inner pixel bounds, projected them through the same `object-fit: cover` and cabin scale math, and used the resulting live rectangle for clip, translation, and X/Y scale. The small result is now visible on cabin entry and remains flush with all four display edges.
 - P2: the exterior close-up centered on the tailgate, making the straight push feel too low. Moved the Canvas focal height from `55%` to `46%` so the rear window remains the camera target as the vehicle fills the viewport.
+- P2: the first theme handoff fixed the hard boundary but created a large washed-out gap above the dashboard. Removed the viewport-sized overlay and attached a compact `96px` feather directly to `ProductDemo`, so the real interface now carries the transition into view.
 
 ## Residual P3 Notes
 

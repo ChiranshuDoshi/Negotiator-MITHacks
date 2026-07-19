@@ -176,9 +176,8 @@ export function CinematicShowcase({ onSkip, onLogin }) {
         </div>
 
         <div className="cinematic-copy cinematic-copy--hero" style={{ opacity: heroCopyOpacity }}>
-          <p className="scene-index">01 · Open road</p>
-          <h1>Your insurance.<br />Finally negotiated.</h1>
-          <p className="hero-support">PolicyScout compares five matched quotes, then calls again for a better result.</p>
+          <h1>Your insurance<br />Finally negotiated.</h1>
+          <p className="hero-support">PolicyScout compares top matched quotes,<br />then calls for the best price.</p>
           <div className="hero-actions">
             <button className="primary-button primary-button--mint" type="button" onClick={onSkip}>
               Try live demo <ArrowRight size={18} weight="bold" />
@@ -188,13 +187,11 @@ export function CinematicShowcase({ onSkip, onLogin }) {
         </div>
 
         <div className="cinematic-copy cinematic-copy--phase" style={{ opacity: followCopyOpacity }}>
-          <p className="scene-index">02 · Straight rear follow</p>
           <h2>We call the market.<br />You stay in control.</h2>
-          <p>Five coverage-matched conversations. One normalized view.</p>
+          <p>Same coverage, better prices in one dashboard.</p>
         </div>
 
         <div className="cinematic-copy cinematic-copy--phase" style={{ opacity: cockpitCopyOpacity }}>
-          <p className="scene-index">03 · Into the screen</p>
           <h2>Listen to the work.<br />Verify every claim.</h2>
         </div>
 
