@@ -529,7 +529,7 @@ export const ProductDemo = forwardRef(function ProductDemo(_, ref) {
     <section className="demo-section" id="demo" ref={ref} aria-label="Interactive PolicyScout demo">
       <div className="demo-app">
         <aside className="demo-sidebar">
-          <div className="brand-lockup brand-lockup--dark"><span className="brand-mark">PS</span><span>PolicyScout<small>Insurance operations</small></span></div>
+          <div className="brand-lockup brand-lockup--dark"><span className="brand-mark" aria-hidden="true" /><span>PolicyScout<small>Insurance operations</small></span></div>
           <div className="sidebar-case"><span>Active policy</span><strong>2023 Hyundai Tucson</strong><small>Case PS-AUTO-7F31</small></div>
           <p className="sidebar-label">Workflow</p>
           <nav aria-label="Demo journey">
@@ -551,7 +551,7 @@ export const ProductDemo = forwardRef(function ProductDemo(_, ref) {
         </aside>
 
         <div className="demo-workspace">
-          <div className="mobile-demo-bar"><div className="brand-lockup brand-lockup--dark"><span className="brand-mark">PS</span><span>PolicyScout</span></div><span>Step {currentStepIndex} / 5</span></div>
+          <div className="mobile-demo-bar"><div className="brand-lockup brand-lockup--dark"><span className="brand-mark" aria-hidden="true" /><span>PolicyScout</span></div><span>Step {currentStepIndex} / 5</span></div>
           <div className="demo-topbar"><div className="topbar-breadcrumb"><span>Auto insurance</span><ArrowRight size={12} /><strong>Policy PS-AUTO-7F31</strong></div><div className="global-verification"><SealCheck size={16} weight="fill" /><span><strong>Profile verified</strong><small>12 facts · 2 sources</small></span></div></div>
           <div className="demo-content">
             <StepHeader step={step} />

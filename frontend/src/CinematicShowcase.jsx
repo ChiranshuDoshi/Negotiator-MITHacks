@@ -145,7 +145,7 @@ export function CinematicShowcase({ onSkip, onLogin }) {
       <div className="cinematic-sticky">
         <header className="showcase-nav" style={{ opacity: navOpacity }}>
           <button className="brand-lockup" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="PolicyScout home">
-            <span className="brand-mark">PS</span>
+            <span className="brand-mark" aria-hidden="true" />
             <span>PolicyScout</span>
           </button>
           <nav className="showcase-links" aria-label="Primary navigation">
