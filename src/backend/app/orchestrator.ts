@@ -503,10 +503,10 @@ function buildLiveSteps(originalCents: number, finalCents: number, snapshot: Con
 }
 
 /** Polls a live negotiation call, finalizing the result when the call ends. */
-export async function pollNegotiation(workflow: WorkflowState): Promise<void> {
+export async function pollNegotiation(workflow: WorkflowState): Promise<boolean> {
   const negotiation = workflow.negotiation;
-  if (!negotiation || negotiation.mode !== "live" || !negotiation.conversationId) return;
-  if (negotiation.callStatus === "completed" || negotiation.callStatus === "failed") return;
+  if (!negotiation || negotiation.mode !== "live" || !negotiation.conversationId) return false;
+  if (negotiation.callStatus === "completed" || negotiation.callStatus === "failed") return false;
 
   let snapshot: ConversationSnapshot;
   try {
@@ -514,7 +514,7 @@ export async function pollNegotiation(workflow: WorkflowState): Promise<void> {
   } catch (cause) {
     negotiation.errorMessage = cause instanceof Error ? cause.message : "Could not read call status";
     touch(workflow);
-    return;
+    return true;
   }
 
   negotiation.transcript = snapshot.transcript.map((entry) => ({
@@ -527,13 +527,13 @@ export async function pollNegotiation(workflow: WorkflowState): Promise<void> {
   if (snapshot.phase === "in_progress" || snapshot.phase === "processing") {
     negotiation.callStatus = snapshot.phase;
     touch(workflow);
-    return;
+    return true;
   }
   if (snapshot.phase === "failed") {
     negotiation.callStatus = "failed";
     negotiation.errorMessage = "The negotiation call did not complete.";
     touch(workflow);
-    return;
+    return true;
   }
 
   // Call completed — prefer the agent-recorded price, else derive it.
@@ -554,6 +554,7 @@ export async function pollNegotiation(workflow: WorkflowState): Promise<void> {
   }
   workflow.stage = "result";
   touch(workflow);
+  return true;
 }
 
 /** Server-side handle for the recording proxy route. */

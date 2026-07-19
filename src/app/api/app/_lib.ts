@@ -6,23 +6,26 @@ import {
   getWorkflow,
   type Account,
   type WorkflowState,
+  LiveCallRateLimitError,
+  WORKFLOW_RETENTION_SECONDS,
+  WorkflowStoreError,
 } from "@/backend/app/store";
 import { AppError } from "@/backend/app/orchestrator";
 
 const ACCOUNT_COOKIE = "ps_account";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const COOKIE_MAX_AGE = WORKFLOW_RETENTION_SECONDS;
 
 export async function currentAccount(): Promise<Account | null> {
   const jar = await cookies();
   const id = jar.get(ACCOUNT_COOKIE)?.value;
   if (!id) return null;
-  return getAccount(id) ?? null;
+  return getAccount(id);
 }
 
 export async function requireContext(): Promise<{ account: Account; workflow: WorkflowState }> {
   const account = await currentAccount();
   if (!account) throw new AppError("NOT_AUTHENTICATED", "Sign up to start a workflow.", 401);
-  const workflow = getWorkflow(account.workflowId);
+  const workflow = await getWorkflow(account.workflowId);
   if (!workflow) throw new AppError("WORKFLOW_NOT_FOUND", "No active workflow for this account.", 404);
   return { account, workflow };
 }
@@ -33,6 +36,7 @@ export async function setAccountCookie(accountId: string): Promise<void> {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
+    secure: process.env.NODE_ENV === "production",
     maxAge: COOKIE_MAX_AGE,
   });
 }
@@ -45,6 +49,12 @@ export function jsonOk(body: unknown, status = 200): Response {
 }
 
 export function appErrorResponse(error: unknown): Response {
+  if (error instanceof LiveCallRateLimitError) {
+    return jsonOk({ error: { code: error.code, message: error.message } }, error.status);
+  }
+  if (error instanceof WorkflowStoreError) {
+    return jsonOk({ error: { code: error.code, message: error.message } }, 503);
+  }
   if (error instanceof AppError) {
     return jsonOk({ error: { code: error.code, message: error.message } }, error.status);
   }
