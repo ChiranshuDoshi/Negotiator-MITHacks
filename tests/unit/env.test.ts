@@ -5,7 +5,7 @@ beforeEach(() => resetEnvCache());
 
 describe("environment config (test #34)", () => {
   it("boots in fully-mocked demo mode with no credentials", () => {
-    const env = getEnv({ DEMO_MODE: "true" } as NodeJS.ProcessEnv);
+    const env = getEnv({ DEMO_MODE: "true" } as unknown as NodeJS.ProcessEnv);
     const caps = capabilities(env);
     expect(caps.hasSupabase).toBe(false);
     expect(caps.hasOpenAI).toBe(false);
@@ -20,7 +20,7 @@ describe("environment config (test #34)", () => {
       NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
       SUPABASE_SERVICE_ROLE_KEY: "svc",
       ELEVENLABS_API_KEY: "el",
-    } as NodeJS.ProcessEnv);
+    } as unknown as NodeJS.ProcessEnv);
     const caps = capabilities(env);
     expect(caps.hasSupabase).toBe(true);
     expect(caps.hasElevenLabs).toBe(true);
@@ -29,7 +29,7 @@ describe("environment config (test #34)", () => {
 
   it("rejects an invalid app URL", () => {
     expect(() =>
-      getEnv({ NEXT_PUBLIC_APP_URL: "not-a-url" } as NodeJS.ProcessEnv)
+      getEnv({ NEXT_PUBLIC_APP_URL: "not-a-url" } as unknown as NodeJS.ProcessEnv)
     ).toThrow(/Invalid environment/);
   });
 });
