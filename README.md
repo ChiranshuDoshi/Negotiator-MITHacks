@@ -1,6 +1,8 @@
-# PolicyScout — Person 4 Intelligence Services
+# PolicyScout — Person 4 Intelligence and Person 3 Voice Demo
 
 This branch implements PolicyScout's Person 4 market-research, synthetic quote-intelligence, coverage-equivalence, and recommendation handoff slice.
+
+It also includes Person 3's ElevenLabs voice harness and bounded negotiation demo. Person 3 consumes the validated Person 4 handoff; it does not reimplement provider research, quote normalization, recommendations, or negotiation-event validation.
 
 The research service accepts a provider-safe confirmed quote request and searches for auto-insurance providers using the user's state, ZIP code, requested coverage, and exclusions. It ranks eligible providers from cited public evidence. Public web prices, averages, and marketing claims are never treated as personalized quotes.
 
@@ -14,6 +16,59 @@ corepack pnpm dev
 ```
 
 Set `TAVILY_API_KEY` only for live research. Set `POLICYSCOUT_INTERNAL_API_KEY` to a strong server-only value for trusted quote, negotiation, recommendation, and paid live-research requests. Mock research works without credentials.
+
+## Person 3 ElevenLabs setup
+
+Set `ELEVENLABS_API_KEY` in `.env`. The key needs **ElevenAgents: Write** and **Text to Speech: Access**. Inspect the planned configuration first, then apply it:
+
+```bash
+corepack pnpm setup:elevenlabs
+corepack pnpm setup:elevenlabs -- --apply
+```
+
+The apply command writes only the resulting non-secret agent IDs to `.env.local`. The API key remains server-side. Before starting a negotiation from the backend terminal, prepare the private goal and user identity from the exact Person 4 handoff:
+
+```bash
+corepack pnpm prepare:elevenlabs:negotiation -- \
+  --artifact-dir .artifacts/person4/<run-time> \
+  --confirm-selection <provider-id>:<quote-id> \
+  --target-cents <private-target-cents> \
+  --profile tests/fixtures/fake_person_profile.json
+```
+
+Use `--user-name "Your Name"` instead of `--profile` when no profile file is available; provide exactly one identity source. The command imports only `userContext.displayName` from a profile. It writes the full goal only to `.artifacts/person3/negotiation-session.json` with private file permissions and prints a safe reference containing only workflow, provider, quote, specification hash, and selection timestamp. ElevenLabs receives the display name and safe quote context, but never the private target, range, ceiling, or local goal object. The managed negotiator's static compliance prompt still requires unchanged coverage.
+
+The standalone smoke scripts are explicit about live calls because they may consume ElevenLabs credits:
+
+```bash
+corepack pnpm test:elevenlabs:voice -- --live
+corepack pnpm test:elevenlabs:negotiation -- \
+  --artifact-dir .artifacts/person4/<run-time> \
+  --confirm-selection <provider-id>:<quote-id> \
+  --target-cents <private-target-cents>
+```
+
+The negotiation command defaults to a deterministic, fixture-only mock that validates the Person 4 selection and handoff but is deliberately rejected by Person 4's event validator. Add `--live` to exercise ElevenLabs conversation simulation. Neither path invents a structured insurer outcome: actual offers must retain exact transcript evidence and be verified by a human before any transaction.
+
+For an automated, backend-only interruption check, use the prepared session (or regenerate its identity with `--user-name "Your Name"`) and run:
+
+```bash
+corepack pnpm verify:elevenlabs:interruption -- --check
+corepack pnpm verify:elevenlabs:interruption -- --live
+```
+
+`--check` makes no live calls or credit use; `--live` uses ElevenLabs TTS and agent credits, but no microphone or frontend. It defaults to `.artifacts/person3/negotiation-session.json`, supplies scripted 16 kHz PCM, and privately writes verification artifacts while checking a later-turn barge-in, correction memory, no opening replay, the $120 same-coverage discount, exact improved-term confirmation, and one tool call.
+
+To speak with the negotiation agent directly from the backend terminal, install PortAudio once on macOS, validate the prepared session, then start the live microphone conversation:
+
+```bash
+brew install portaudio
+chmod 600 .env .env.local
+corepack pnpm talk:elevenlabs -- --check
+corepack pnpm talk:elevenlabs -- --live
+```
+
+The live command uses the prepared `.artifacts/person3/negotiation-session.json`, streams the default microphone and speakers, consumes ElevenLabs credits, and ends on Ctrl-C. Use headphones for reliable interruption handling. It keeps one conversation open so the agent can use the current call's history, and it never sends the private target or range to ElevenLabs or records a negotiation result from this terminal smoke check. A teammate connecting a frontend should pass the returned safe `userDisplayName` as ElevenLabs dynamic variable `user_display_name`; no frontend is required for this backend flow.
 
 ## Verify the live Person 4 flow
 
@@ -55,10 +110,11 @@ corepack pnpm lint
 corepack pnpm typecheck
 corepack pnpm test
 corepack pnpm build
+corepack pnpm test:person3
 ```
 
 The provider-safe user fixture is at `tests/fixtures/fake_person_profile.json`. Its Massachusetts location is only demo data; changing the confirmed state and ZIP drives the same nationwide search path.
 
 ## Scope
 
-Personal auto is implemented deeply. Other insurance lines use the generic configuration extension point. Person 3's negotiation agent, real quote calls, Google Places, real insurance transactions, policy binding, and personalized prices scraped from the web are intentionally out of scope.
+Personal auto is implemented deeply. Other insurance lines use the generic configuration extension point. Person 3 includes a local demo voice connection, safe context projection, and mock/live-simulation test paths. Production authentication and persistence, autonomous insurer calls, real quote calls, Google Places, real insurance transactions, policy binding, and personalized prices scraped from the web remain out of scope.
