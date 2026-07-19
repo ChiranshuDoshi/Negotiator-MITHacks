@@ -79,6 +79,8 @@ All secrets stay server-side. Do not commit `.env`, `.env.local`, generated `.ar
 | `POLICYSCOUT_INTERNAL_API_KEY` | Direct, protected API routes | Use a strong server-to-server value and send it as `Authorization: Bearer <value>`. Not needed for the browser BFF workflow. |
 | `DEMO_MODE=true` | Local ElevenLabs demo routes | Enables local-only conversation endpoints; those endpoints reject production and non-loopback requests. |
 
+> **Twilio status:** Twilio configuration is present in the repository, but it is not currently connected to the application; live Twilio calling remains inactive.
+
 The application also recognizes `NEXT_PUBLIC_APP_URL`, `MAX_UPLOAD_MB`, and `DEFAULT_RETENTION_DAYS`; see [`src/config/env.ts`](src/config/env.ts) for validation defaults and the full optional configuration surface.
 
 ## Common commands
