@@ -1,5 +1,12 @@
 node_modules/
 .next/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.local
+.env.*.local
 coverage/
 .env
 .env.local
@@ -7,3 +14,5 @@ coverage/
 .headroom/
 .mcp-cache/
 .artifacts/
+.DS_Store
+package-lock.json
