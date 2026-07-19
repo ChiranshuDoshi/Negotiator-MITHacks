@@ -36,6 +36,8 @@
       "@/server/services/conversations/*": ["./src/backend/negotiator/services/conversations/*"],
       "@/integrations/elevenlabs": ["./src/backend/negotiator/integrations/elevenlabs"],
       "@/integrations/elevenlabs/*": ["./src/backend/negotiator/integrations/elevenlabs/*"],
+      "@/integrations/twilio": ["./src/backend/negotiator/integrations/twilio"],
+      "@/integrations/twilio/*": ["./src/backend/negotiator/integrations/twilio/*"],
       "@/domain/equivalence": ["./src/backend/market-research/domain/equivalence"],
       "@/domain/equivalence/*": ["./src/backend/market-research/domain/equivalence/*"],
       "@/domain/normalization": ["./src/backend/market-research/domain/normalization"],
