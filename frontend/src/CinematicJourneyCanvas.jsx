@@ -4,7 +4,7 @@ const JOURNEY_END = 0.3;
 const COVER_OVERSCAN = 1.04;
 
 const JOURNEY_FRAMES = [
-  { src: "/assets/rear-follow-medium.webp", focal: [0.5, 0.46] },
+  { src: "/assets/rear-follow-medium-clean.webp", focal: [0.5, 0.46] },
 ];
 
 function clamp(value, min = 0, max = 1) {
@@ -107,6 +107,8 @@ export function CinematicJourneyCanvas({ progress, reducedMotion }) {
       context.fillStyle = "#0c1513";
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
       const state = renderJourney(context, images, width, height, progressRef.current, reducedMotionRef.current);
       canvas.dataset.frame = String(state.frameIndex);
       canvas.dataset.blend = state.blend.toFixed(3);
