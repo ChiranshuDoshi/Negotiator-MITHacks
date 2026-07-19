@@ -7,3 +7,12 @@ coverage/
 .env
 .env.local
 .env.*.local
+coverage/
+.env
+.env.local
+*.tsbuildinfo
+.headroom/
+.mcp-cache/
+.artifacts/
+.DS_Store
+package-lock.json
