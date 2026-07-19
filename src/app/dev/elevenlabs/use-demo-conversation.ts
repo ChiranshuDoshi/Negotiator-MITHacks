@@ -17,15 +17,73 @@ export interface NegotiationReference {
   readonly selectedAt: string;
 }
 
+export interface QuoteCollectionReference {
+  readonly collectionId: string;
+  readonly workflowId: string;
+  readonly providerId: string;
+  readonly specificationHash: string;
+}
+
 export type DemoConversationRequest =
   | { readonly purpose: "voice_smoke" }
-  | { readonly purpose: "negotiation"; readonly negotiationReference: NegotiationReference };
+  | { readonly purpose: "negotiation"; readonly negotiationReference: NegotiationReference }
+  | { readonly purpose: "quote_collection"; readonly quoteCollectionReference: QuoteCollectionReference };
+
+export interface QuoteCapture {
+  readonly totalPolicyTermCostCents: number;
+  readonly policyTermMonths: number;
+  readonly feesAndTaxesIncluded: true;
+  readonly coverageMatchesRequested: true;
+  readonly effectiveDate: string;
+  readonly quoteValidUntil: string;
+  readonly providerResponse: string;
+}
+
+export interface SafeQuoteCollectionContext {
+  readonly collectionId: string;
+  readonly workflowId: string;
+  readonly specificationHash: string;
+  readonly providerId: string;
+  readonly providerName: string;
+  readonly providerSafeBrief: string;
+}
+
+export interface QuoteCollectionProviderStatus {
+  readonly providerId: string;
+  readonly providerName: string;
+  readonly status: string;
+}
+
+export interface QuoteCollectionResult {
+  readonly recommendedProviderName: string;
+  readonly effectiveComparisonCostCents: number;
+  readonly negotiationHandoff: unknown;
+}
+
+export interface QuoteCollectionSnapshot {
+  readonly providers: readonly QuoteCollectionProviderStatus[];
+  readonly result: QuoteCollectionResult | null;
+}
+
+export interface QuoteCollectionDisplay {
+  readonly context: SafeQuoteCollectionContext;
+  readonly snapshot: QuoteCollectionSnapshot | null;
+}
 
 interface CredentialResponse {
-  readonly session: { readonly id: string; readonly negotiation: SafeNegotiationContext | null };
+  readonly session: {
+    readonly id: string;
+    readonly negotiation: SafeNegotiationContext | null;
+    readonly quoteCollection: SafeQuoteCollectionContext | null;
+  };
   readonly credential:
     | { readonly transport: "webrtc"; readonly conversationToken: string }
     | { readonly transport: "websocket"; readonly signedUrl: string };
+}
+
+interface SessionPatchResponse {
+  readonly session: unknown;
+  readonly collection?: QuoteCollectionSnapshot;
 }
 
 interface ErrorResponse {
@@ -80,10 +138,12 @@ interface ActiveSession {
   readonly lifecycle: LifecycleGeneration;
   readonly sessionId: string;
   readonly negotiation: SafeNegotiationContext | null;
+  readonly quoteCollection: SafeQuoteCollectionContext | null;
   endIntent: EndIntent;
 }
 
 const MAX_START_ATTEMPTS = 3;
+const MAX_QUOTE_COLLECTION_START_ATTEMPTS = 10;
 
 async function readResponse<T>(response: Response): Promise<T> {
   const body = await response.json() as T & ErrorResponse;
@@ -106,16 +166,25 @@ function formatCents(value: number | null): string {
   return value === null ? "not available" : `$${(value / 100).toFixed(2)}`;
 }
 
+function getQuoteCollectionSnapshot(
+  response: QuoteCollectionSnapshot | { readonly collection: QuoteCollectionSnapshot },
+): QuoteCollectionSnapshot {
+  return "collection" in response ? response.collection : response;
+}
+
 export function useDemoConversation() {
   const [state, setState] = useState<ConversationState>("idle");
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [quoteCollection, setQuoteCollection] = useState<QuoteCollectionDisplay | null>(null);
   const [startAttempts, setStartAttempts] = useState(0);
+  const [quoteCollectionStartAttempts, setQuoteCollectionStartAttempts] = useState(0);
   const mountedRef = useRef(true);
   const inFlightRef = useRef(false);
   const startAbortRef = useRef<AbortController | null>(null);
   const coordinatorRef = useRef(createConversationLifecycleCoordinator());
   const activeSessionRef = useRef<ActiveSession | null>(null);
+  const quoteCollectionSnapshotVersionRef = useRef(0);
 
   const patchSession = useCallback(async (sessionId: string, payload: Record<string, unknown>) => {
     const response = await fetch(`/api/conversations/sessions/${encodeURIComponent(sessionId)}`, {
@@ -124,7 +193,18 @@ export function useDemoConversation() {
       body: JSON.stringify(payload),
       cache: "no-store",
     });
-    return readResponse<{ readonly result?: unknown }>(response);
+    return readResponse<SessionPatchResponse>(response);
+  }, []);
+
+  const fetchQuoteCollection = useCallback(async (collectionId: string) => {
+    const response = await fetch(`/api/conversations/collections/${encodeURIComponent(collectionId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+      cache: "no-store",
+    });
+    const body = await readResponse<QuoteCollectionSnapshot | { readonly collection: QuoteCollectionSnapshot }>(response);
+    return getQuoteCollectionSnapshot(body);
   }, []);
 
   const conversation = useConversation();
@@ -169,7 +249,39 @@ export function useDemoConversation() {
       ingested: false,
       message: "Demo results are not ingested automatically.",
     }),
-  }), []);
+    record_quote: async (capture: QuoteCapture) => {
+      if (!session.quoteCollection || !isCurrent(session) || session.endIntent !== null) {
+        return JSON.stringify({ error: { message: "Quote collection is not active." } });
+      }
+
+      const result = await session.lifecycle.enqueue(() => patchSession(session.sessionId, {
+        action: "record_quote",
+        capture,
+      }));
+      if (!result.ok) {
+        if (isCurrent(session)) setError(errorMessage(result.error, "Could not record the quote"));
+        return JSON.stringify({ error: { message: errorMessage(result.error, "Could not record the quote") } });
+      }
+
+      session.endIntent = "complete";
+      const snapshotVersion = ++quoteCollectionSnapshotVersionRef.current;
+      if (result.value.collection && isCurrent(session)) {
+        setQuoteCollection({ context: session.quoteCollection, snapshot: result.value.collection });
+      } else {
+        void (async () => {
+          try {
+            const snapshot = await fetchQuoteCollection(session.quoteCollection!.collectionId);
+            if (isCurrent(session) && quoteCollectionSnapshotVersionRef.current === snapshotVersion) {
+              setQuoteCollection({ context: session.quoteCollection!, snapshot });
+            }
+          } catch (cause) {
+            if (isCurrent(session)) setError(errorMessage(cause, "Could not refresh quote collection status"));
+          }
+        })();
+      }
+      return JSON.stringify(result.value);
+    },
+  }), [fetchQuoteCollection, isCurrent, patchSession]);
 
   const finalizeDisconnect = useCallback(async (session: ActiveSession) => {
     if (!isCurrent(session)) return;
@@ -198,12 +310,15 @@ export function useDemoConversation() {
   }, [isCurrent, updateSession]);
 
   const start = useCallback(async (request: DemoConversationRequest) => {
+    const isQuoteCollection = request.purpose === "quote_collection";
+    const attempts = isQuoteCollection ? quoteCollectionStartAttempts : startAttempts;
+    const maxAttempts = isQuoteCollection ? MAX_QUOTE_COLLECTION_START_ATTEMPTS : MAX_START_ATTEMPTS;
     if (
       inFlightRef.current
       || conversation.status !== "disconnected"
       || state === "active"
       || state === "processing"
-      || startAttempts >= MAX_START_ATTEMPTS
+      || attempts >= maxAttempts
     ) {
       return;
     }
@@ -212,11 +327,17 @@ export function useDemoConversation() {
     inFlightRef.current = true;
     const controller = new AbortController();
     startAbortRef.current = controller;
-    setStartAttempts((current) => current + 1);
+    if (isQuoteCollection) {
+      setQuoteCollectionStartAttempts((current) => current + 1);
+    } else {
+      setStartAttempts((current) => current + 1);
+    }
     activeSessionRef.current = null;
     setState("connecting");
     setError(null);
     setTranscript([]);
+    if (!isQuoteCollection) setQuoteCollection(null);
+    quoteCollectionSnapshotVersionRef.current += 1;
     let createdSessionId: string | null = null;
 
     try {
@@ -249,10 +370,34 @@ export function useDemoConversation() {
         lifecycle,
         sessionId: createdSessionId,
         negotiation: body.session.negotiation,
+        quoteCollection: body.session.quoteCollection,
         endIntent: null,
       };
       activeSessionRef.current = session;
-      const dynamicVariables = body.session.negotiation ? {
+      if (body.session.quoteCollection) {
+        const snapshotVersion = ++quoteCollectionSnapshotVersionRef.current;
+        setQuoteCollection((current) => ({
+          context: body.session.quoteCollection!,
+          snapshot: current?.context.collectionId === body.session.quoteCollection!.collectionId
+            ? current.snapshot
+            : null,
+        }));
+        void (async () => {
+          try {
+            const snapshot = await fetchQuoteCollection(body.session.quoteCollection!.collectionId);
+            if (isCurrent(session) && quoteCollectionSnapshotVersionRef.current === snapshotVersion) {
+              setQuoteCollection({ context: body.session.quoteCollection!, snapshot });
+            }
+          } catch (cause) {
+            if (isCurrent(session)) setError(errorMessage(cause, "Could not load quote collection status"));
+          }
+        })();
+      }
+
+      const dynamicVariables: Record<string, string | number | boolean> | undefined = body.session.quoteCollection ? {
+        quote_provider_name: body.session.quoteCollection.providerName,
+        quote_profile_brief: body.session.quoteCollection.providerSafeBrief,
+      } : body.session.negotiation ? {
         selected_provider_name: body.session.negotiation.selectedProviderName,
         selected_provider_id: body.session.negotiation.targetProviderId,
         selected_quote_id: body.session.negotiation.selectedQuoteId,
@@ -342,6 +487,8 @@ export function useDemoConversation() {
     isCurrent,
     makeClientTools,
     patchSession,
+    fetchQuoteCollection,
+    quoteCollectionStartAttempts,
     startAttempts,
     startSession,
     state,
@@ -394,15 +541,23 @@ export function useDemoConversation() {
   }, [endSession, patchSession]);
 
   const sdkDisconnected = conversation.status === "disconnected";
+  const canSelectPurpose = sdkDisconnected && !["connecting", "active", "processing"].includes(state);
+  const canStartForPurpose = (purpose: DemoConversationRequest["purpose"]) => (
+    canSelectPurpose
+    && (purpose === "quote_collection"
+      ? quoteCollectionStartAttempts < MAX_QUOTE_COLLECTION_START_ATTEMPTS
+      : startAttempts < MAX_START_ATTEMPTS)
+  );
   return {
     state,
     sdkStatus: conversation.status,
     mode: conversation.mode,
     transcript,
+    quoteCollection,
     error,
-    canStart: sdkDisconnected
-      && !["connecting", "active", "processing"].includes(state)
-      && startAttempts < MAX_START_ATTEMPTS,
+    canSelectPurpose,
+    canStart: canStartForPurpose("voice_smoke"),
+    canStartForPurpose,
     canEnd: state === "connecting" || state === "active",
     start,
     end,

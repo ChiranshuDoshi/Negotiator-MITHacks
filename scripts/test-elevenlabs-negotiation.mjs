@@ -46,9 +46,9 @@ export function parseNegotiationArgs(argv) {
 export async function loadAndValidatePerson4Artifacts(directory, confirmation) {
   assert(directory, "--artifact-dir is required");
   assert(confirmation, "--confirm-selection requires the exact providerId:quoteId value; selection is never automatic");
-  const [research, normalized, handoff, synthetic] = await Promise.all([
+  const [research, normalized, handoff, rawQuotes] = await Promise.all([
     readJson(resolve(directory, "research.json")), readJson(resolve(directory, "normalized-quotes.json")),
-    readJson(resolve(directory, "person3-handoff.json")), readJson(resolve(directory, "synthetic-quotes.json")),
+    readJson(resolve(directory, "person3-handoff.json")), readJson(resolve(directory, "raw-quotes.json")),
   ]);
   const target = handoff?.target;
   assert(target?.providerId && target?.quoteId, "Person 4 handoff has no target");
@@ -60,7 +60,7 @@ export async function loadAndValidatePerson4Artifacts(directory, confirmation) {
   const selectedProvider = research?.ranking?.selected?.find((item) => item.providerId === target.providerId);
   assert(selectedProvider, "Target provider is absent from the Person 4 selected provider set");
   assert(!target.providerName || target.providerName === selectedProvider.providerName, "Provider name mismatch between handoff and research artifacts");
-  const evidence = synthetic?.quotes?.flatMap((item) => item.evidence ?? []) ?? [];
+  const evidence = rawQuotes?.quotes?.flatMap((item) => item.evidence ?? []) ?? [];
   const evidenceIds = new Set(evidence.map((item) => item.id));
   assert((quote.evidenceIds ?? []).every((id) => evidenceIds.has(id)), "Normalized quote references evidence absent from Person 4 artifacts");
   return { handoff, target, quote, selectedProvider, evidence };
@@ -84,7 +84,7 @@ export function buildMockResult(context, options, now = "2026-01-01T00:00:00.000
     ? Math.round(finalCostCents / termMonths)
     : null;
   const request = "Keep identical coverage and ask what options could improve the quoted cost. Do not disclose the private target.";
-  const response = `Fixture-only simulated response proposes a ${discountCents}-cent policy-period demo discount, a final policy-period effective cost of ${finalCostCents} cents${derivedMonthlyCents === null ? "" : ` and derived monthly effective cost of ${derivedMonthlyCents} cents`}. This is not provider confirmation. Coverage is unchanged, no fees were added, and this remains synthetic, non-binding, non-ingestible, and subject to human verification.`;
+  const response = `Fixture-only simulated response proposes a ${discountCents}-cent policy-period demo discount, a final policy-period effective cost of ${finalCostCents} cents${derivedMonthlyCents === null ? "" : ` and derived monthly effective cost of ${derivedMonthlyCents} cents`}. This is not provider confirmation. Coverage is unchanged, no fees were added, and this remains simulated, non-binding, non-ingestible, and subject to human verification.`;
   const transcript = [
     { role: "agent", message: `I would like to keep the same coverage with ${selectedProvider.providerName}. ${request}` },
     { role: "provider", message: response },

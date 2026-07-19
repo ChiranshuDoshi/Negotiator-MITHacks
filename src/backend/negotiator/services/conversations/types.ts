@@ -37,6 +37,34 @@ export interface NegotiationSessionInput {
   readonly explicitSelection?: ExplicitQuoteSelection;
 }
 
+export interface QuoteCollectionReference {
+  readonly collectionId: string;
+  readonly workflowId: string;
+  readonly providerId: string;
+  readonly specificationHash: string;
+}
+
+export interface QuoteCollectionSessionInput {
+  readonly collectionId: string;
+  readonly workflowId: string;
+  readonly specificationHash: string;
+  readonly providerId: string;
+  readonly providerName: string;
+  readonly providerSafeBrief: string;
+}
+
+export type SafeQuoteCollectionContext = QuoteCollectionSessionInput;
+
+export interface QuoteCapture {
+  readonly totalPolicyTermCostCents: number;
+  readonly policyTermMonths: number;
+  readonly feesAndTaxesIncluded: true;
+  readonly coverageMatchesRequested: true;
+  readonly effectiveDate: string;
+  readonly quoteValidUntil: string;
+  readonly providerResponse: string;
+}
+
 export interface SafeNegotiationContext {
   readonly userDisplayName: string;
   readonly workflowId: string;
@@ -68,6 +96,7 @@ export interface ConversationSession {
   readonly transcript: readonly TranscriptEntry[];
   readonly errorCode: string | null;
   readonly negotiation: SafeNegotiationContext | null;
+  readonly quoteCollection: SafeQuoteCollectionContext | null;
 }
 
 export interface TranscriptEntry {

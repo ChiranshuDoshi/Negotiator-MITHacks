@@ -35,7 +35,6 @@ function evaluateCandidate(
   selectedQuote: NormalizedQuote,
   evidenceById: ReadonlyMap<string, Evidence>,
   today: string,
-  nowIso: string,
 ): CandidateEvaluation {
   const parsed = NormalizedQuoteSchema.safeParse(value);
   if (!parsed.success) return { reasons: ["quote data failed normalized-quote validation"] };
@@ -47,12 +46,12 @@ function evaluateCandidate(
   if (quote.confirmedRequestId !== selectedQuote.confirmedRequestId) reasons.push("confirmed quote request does not match");
   if (quote.specificationHash !== selectedQuote.specificationHash) reasons.push("specification hash does not match");
   if (quote.simulated !== selectedQuote.simulated) reasons.push("demo/live mode does not match");
+  if (quote.simulated && quote.sourceType === "conversation") {
+    reasons.push("simulated quote-collection calls cannot be used as leverage");
+  }
   if (quote.status !== "complete") reasons.push("quote is not complete");
   if (quote.effectiveComparisonCostCents === null) reasons.push("effective comparison cost is missing");
-  if (quote.sourceType === "synthetic_dataset") {
-    if (!quote.quoteValidUntil) reasons.push("synthetic quote validity deadline is missing");
-    else if (quote.quoteValidUntil <= nowIso) reasons.push("synthetic quote is stale");
-  } else if (quote.expirationDate === null) reasons.push("quote expiration is missing");
+  if (quote.expirationDate === null) reasons.push("quote expiration is missing");
   else if (quote.expirationDate < today) reasons.push("quote is expired");
   if (!ELIGIBLE_EQUIVALENCE_STATUSES.has(quote.coverageEquivalence.status)) {
     reasons.push("coverage is not equivalent or better");
@@ -93,7 +92,7 @@ export function selectVerifiedLeverage(input: VerifiedLeverageInput): LeverageSe
   const nowIso = input.now.toISOString();
   const today = nowIso.slice(0, 10);
   const evaluated = input.candidateQuotes.map((candidate) =>
-    evaluateCandidate(candidate, selected.data, evidenceById, today, nowIso),
+    evaluateCandidate(candidate, selected.data, evidenceById, today),
   );
   const eligible = evaluated
     .filter(

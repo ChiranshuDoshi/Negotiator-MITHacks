@@ -92,8 +92,12 @@ function scoreQuote(quote: QualifyingQuote, minimumCost: number, config: Insuran
   return { ...quote, scoreBreakdown };
 }
 
-function byScoreThenId(left: ScoredQuote, right: ScoredQuote): number {
-  return right.scoreBreakdown.weightedTotal - left.scoreBreakdown.weightedTotal || left.quote.quoteId.localeCompare(right.quote.quoteId);
+function byLowestCostThenId(left: ScoredQuote, right: ScoredQuote): number {
+  return (
+    (left.quote.effectiveComparisonCostCents ?? Number.POSITIVE_INFINITY) -
+      (right.quote.effectiveComparisonCostCents ?? Number.POSITIVE_INFINITY) ||
+    left.quote.quoteId.localeCompare(right.quote.quoteId)
+  );
 }
 
 export function buildRecommendation(input: RecommendationInput): Recommendation {
@@ -127,7 +131,7 @@ export function buildRecommendation(input: RecommendationInput): Recommendation 
   });
 
   const minimumCost = Math.min(...qualifying.map(({ quote }) => quote.effectiveComparisonCostCents ?? Number.POSITIVE_INFINITY));
-  const ranked = qualifying.map((quote) => scoreQuote(quote, minimumCost, config)).sort(byScoreThenId);
+  const ranked = qualifying.map((quote) => scoreQuote(quote, minimumCost, config)).sort(byLowestCostThenId);
   const recommended = ranked[0] ?? null;
   const lowestPrice = [...ranked].sort(
     (left, right) =>
@@ -138,7 +142,7 @@ export function buildRecommendation(input: RecommendationInput): Recommendation 
   const bestCoverage = [...ranked].sort(
     (left, right) =>
       right.scoreBreakdown.coverage - left.scoreBreakdown.coverage ||
-      byScoreThenId(left, right),
+      byLowestCostThenId(left, right),
   )[0];
   const selectedId = input.userSelectedNegotiationQuoteId ?? null;
   const selectedOffer = selectedId === null ? undefined : effectiveOfferByQuoteId.get(selectedId);
@@ -157,7 +161,7 @@ export function buildRecommendation(input: RecommendationInput): Recommendation 
       effectiveCostCents: item.quote.effectiveComparisonCostCents,
       scoreBreakdown: item.scoreBreakdown,
       evidenceIds: item.evidenceIds,
-      explanation: `Ranked deterministically by cost, coverage, completeness, evidence, provider verification, and payment flexibility (score ${item.scoreBreakdown.weightedTotal}).`,
+      explanation: `Selected by lowest valid all-in policy-term cost; diagnostic score ${item.scoreBreakdown.weightedTotal}.`,
     })),
     disqualifiedQuotes,
     recommendedQuoteId: recommended?.quote.quoteId ?? null,

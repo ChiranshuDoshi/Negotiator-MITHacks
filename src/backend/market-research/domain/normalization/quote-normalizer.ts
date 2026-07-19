@@ -132,6 +132,7 @@ export function normalizeQuote(rawQuote: unknown, confirmedRequest: unknown): No
     coverageEquivalence,
     redFlags,
     requiresHumanVerification:
+      quote.simulated ||
       !providerEvidence ||
       cost.effectiveComparisonCostCents === null ||
       confidenceScore < 80 ||

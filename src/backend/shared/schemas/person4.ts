@@ -210,45 +210,12 @@ export const CoverageItemSchema = z.strictObject({
   evidenceIds: z.array(z.string().min(1)),
 });
 
-export const SyntheticDiscountTemplateSchema = DiscountSchema.omit({ evidenceId: true });
-
-export const SyntheticCoverageOverrideSchema = z.strictObject({
-  coverageCode: z.string().min(1).max(80),
-  limitCents: z.number().int().nonnegative().nullable().optional(),
-  deductibleCents: z.number().int().nonnegative().nullable().optional(),
-  included: z.boolean().optional(),
-  exclusions: z.array(z.string().max(240)).max(10).default([]),
-});
-
-export const SyntheticQuoteScenarioSchema = z.strictObject({
-  scenarioId: z.string().min(1).max(80),
-  displayName: z.string().min(1).max(120),
-  behaviorTag: z.enum([
-    "best_value",
-    "conditional_telematics",
-    "stronger_coverage",
-    "large_down_payment",
-    "underwriting_pending",
-  ]),
-  outcomeStatus: z.enum(["complete", "incomplete"]),
-  policyTermMonths: z.number().int().positive().max(24),
-  basePremiumCents: z.number().int().positive(),
-  requiredFeeCents: z.number().int().nonnegative(),
-  requiredTaxCents: z.number().int().nonnegative(),
-  downPaymentCents: z.number().int().nonnegative().nullable(),
-  discounts: z.array(SyntheticDiscountTemplateSchema).max(10),
-  coverageOverrides: z.array(SyntheticCoverageOverrideSchema).max(25),
-  paymentOptions: z.array(z.string().min(1).max(80)).min(1).max(10),
-  conditions: z.array(z.string().min(1).max(240)).max(10),
-  expirationDays: z.number().int().positive().max(120).nullable(),
-});
-
 export const RawQuoteOutcomeSchema = z.strictObject({
   quoteId: z.string().min(1),
   workflowId: z.string().min(1),
   providerId: z.string().min(1),
-  sourceType: z.enum(["conversation", "synthetic_dataset"]).optional(),
-  sourceConversationId: z.string().min(1).nullable(),
+  sourceType: z.literal("conversation").optional(),
+  sourceConversationId: z.string().min(1).nullable().optional(),
   sourceArtifactId: z.string().min(1).nullable().optional(),
   scenarioId: z.string().min(1).nullable().optional(),
   confirmedRequestId: z.string().min(1),
@@ -273,34 +240,6 @@ export const RawQuoteOutcomeSchema = z.strictObject({
   currency: z.string().length(3).optional(),
   disclaimer: z.string().min(1).nullable().optional(),
   simulated: z.boolean(),
-});
-
-export const SyntheticRawQuoteOutcomeSchema = RawQuoteOutcomeSchema.extend({
-  sourceType: z.literal("synthetic_dataset"),
-  sourceConversationId: z.null(),
-  sourceArtifactId: z.string().min(1),
-  scenarioId: z.string().min(1),
-  quoteType: z.literal("simulated"),
-  quoteValidUntil: z.string().datetime().nullable(),
-  currency: z.string().length(3),
-  disclaimer: z.string().min(1),
-  simulated: z.literal(true),
-});
-
-export const SyntheticQuoteGenerationInputSchema = z.strictObject({
-  quoteRequest: ConfirmedQuoteRequestSchema,
-  providerRanking: ProviderRankingResultSchema,
-  generatedAt: z.string().datetime(),
-});
-
-export const SyntheticQuoteBatchSchema = z.strictObject({
-  workflowId: z.string().min(1),
-  quoteRequestId: z.string().min(1),
-  specificationHash: z.string().regex(/^[a-f0-9]{64}$/),
-  generatedAt: z.string().datetime(),
-  datasetVersion: z.string().min(1),
-  quotes: z.array(SyntheticRawQuoteOutcomeSchema).length(5),
-  disclaimer: z.string().min(1),
 });
 
 export const CoverageEquivalenceResultSchema = z.strictObject({
@@ -436,7 +375,8 @@ export const RecommendedDealSchema = z.strictObject({
   providerId: z.string().min(1),
   providerName: z.string().min(1),
   quoteId: z.string().min(1),
-  scenarioId: z.string().min(1),
+  scenarioId: z.string().min(1).nullable(),
+  sourceConversationId: z.string().min(1).nullable().optional(),
   currency: z.string().length(3),
   effectiveComparisonCostCents: z.number().int().positive(),
   annualizedCostCents: z.number().int().positive().nullable(),
@@ -487,8 +427,6 @@ export type RawQuoteOutcome = z.infer<typeof RawQuoteOutcomeSchema>;
 export type RawResearchCandidate = z.infer<typeof RawResearchCandidateSchema>;
 export type RawResearchResult = z.infer<typeof RawResearchResultSchema>;
 export type ResearchSource = z.infer<typeof ResearchSourceSchema>;
-export type SyntheticQuoteBatch = z.infer<typeof SyntheticQuoteBatchSchema>;
-export type SyntheticQuoteScenario = z.infer<typeof SyntheticQuoteScenarioSchema>;
 
 export const ApiErrorSchema = z.strictObject({
   error: z.strictObject({

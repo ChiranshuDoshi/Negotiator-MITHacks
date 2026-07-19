@@ -35,7 +35,7 @@ const negotiationHandoff: NegotiationHandoff = {
     evidenceIds: ["target-evidence"],
     simulated: true,
     requiresHumanVerification: true,
-    disclaimer: "Synthetic quote not supplied by the insurer and not binding.",
+    disclaimer: "Simulated quote not supplied by the insurer and not binding.",
   },
   verifiedCompetingQuote: null,
   requestedOutcome: "lower_price_with_same_or_better_coverage",

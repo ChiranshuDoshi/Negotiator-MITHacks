@@ -29,7 +29,11 @@ function hasTrustedCostEvidence(quote: RawQuoteOutcome, evidenceId: string): boo
   const [evidence] = matchingEvidence;
   if (evidence.workflowId !== quote.workflowId || evidence.type === "web_source") return false;
   if (PROVIDER_QUOTE_EVIDENCE_TYPES.has(evidence.type)) {
-    return evidence.verificationStatus === "provider_confirmed";
+    return evidence.verificationStatus === "provider_confirmed" || (
+      quote.simulated &&
+      evidence.type === "transcript" &&
+      evidence.verificationStatus === "user_confirmed"
+    );
   }
 
   return (

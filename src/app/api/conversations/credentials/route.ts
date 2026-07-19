@@ -10,6 +10,8 @@ import {
   conversationSessions,
   PreparedNegotiationContextError,
   PreparedNegotiationContextService,
+  QuoteCollectionService,
+  quoteCollections,
   type ConversationSessionService,
   type PreparedNegotiationContextProvider,
 } from "@/server/services/conversations";
@@ -27,11 +29,22 @@ const NegotiationReferenceSchema = z.strictObject({
   selectedAt: z.string().datetime(),
 });
 
+const QuoteCollectionReferenceSchema = z.strictObject({
+  collectionId: z.string().min(1).max(128),
+  workflowId: z.string().min(1).max(128),
+  providerId: z.string().min(1).max(128),
+  specificationHash: z.string().regex(/^[a-f0-9]{64}$/),
+});
+
 const BodySchema = z.discriminatedUnion("purpose", [
   z.strictObject({ purpose: z.literal("voice_smoke") }),
   z.strictObject({
     purpose: z.literal("negotiation"),
     negotiationReference: NegotiationReferenceSchema,
+  }),
+  z.strictObject({
+    purpose: z.literal("quote_collection"),
+    quoteCollectionReference: QuoteCollectionReferenceSchema,
   }),
 ]);
 
@@ -39,6 +52,7 @@ interface Dependencies {
   readonly credentials: ConversationCredentialProvider;
   readonly sessions: ConversationSessionService;
   readonly negotiationContexts: PreparedNegotiationContextProvider;
+  readonly quoteCollections?: QuoteCollectionService;
 }
 
 export async function handleCredentialRequest(request: Request, dependencies: Dependencies): Promise<Response> {
@@ -48,17 +62,31 @@ export async function handleCredentialRequest(request: Request, dependencies: De
     const negotiation = body.purpose === "negotiation"
       ? await dependencies.negotiationContexts.load(body.negotiationReference)
       : undefined;
-    const session = dependencies.sessions.create(body.purpose, negotiation);
+    const quoteCollectionService = dependencies.quoteCollections ?? quoteCollections;
+    const quoteCollection = body.purpose === "quote_collection"
+      ? await quoteCollectionService.prepare(body.quoteCollectionReference)
+      : undefined;
+    const session = dependencies.sessions.create(body.purpose, negotiation, quoteCollection);
+    if (quoteCollection) {
+      try {
+        quoteCollectionService.reserve(session);
+      } catch (error) {
+        dependencies.sessions.cancel(session.id);
+        throw error;
+      }
+    }
 
     try {
       const credential = await dependencies.credentials.issue(body.purpose);
       if (request.signal.aborted) {
         dependencies.sessions.cancel(session.id);
+        quoteCollectionService.release(session);
         throw new HttpError(499, "REQUEST_CANCELLED", "Conversation start was cancelled");
       }
       return jsonSuccess({ session, credential }, 201);
     } catch (error) {
       dependencies.sessions.fail(session.id, "CREDENTIAL_ISSUE_FAILED");
+      quoteCollectionService.release(session);
       if (error instanceof HttpError) throw error;
       if (error instanceof ElevenLabsConfigurationError) {
         throw new HttpError(503, "ELEVENLABS_NOT_CONFIGURED", "ElevenLabs is not configured");
@@ -79,5 +107,6 @@ export async function POST(request: Request): Promise<Response> {
     credentials: new ElevenLabsCredentialProvider(),
     sessions: conversationSessions,
     negotiationContexts: new PreparedNegotiationContextService(),
+    quoteCollections,
   });
 }
