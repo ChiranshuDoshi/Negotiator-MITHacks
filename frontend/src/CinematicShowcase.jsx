@@ -4,8 +4,8 @@ import {
   CaretDown,
 } from "@phosphor-icons/react";
 import { useReducedMotion } from "motion/react";
-import { CinematicCabinZoom } from "./CinematicCabinZoom.jsx";
-import { CarCommandCenter, FullCommandCenter } from "./CinematicCommandCenter.jsx";
+import { CinematicCabinZoom, getCabinScreenRect } from "./CinematicCabinZoom.jsx";
+import { FullCommandCenter } from "./CinematicCommandCenter.jsx";
 import { CinematicJourneyCanvas } from "./CinematicJourneyCanvas.jsx";
 
 function interpolate(value, input, output) {
@@ -115,26 +115,26 @@ export function CinematicShowcase({ onSkip, onLogin }) {
   const canvasOpacity = interpolate(scrollProgress, [0, 0.3, 0.335], [1, 1, 0]);
   const cabinProgress = clamp((scrollProgress - 0.34) / 0.28);
   const cabinOpacity = interpolate(scrollProgress, [0.335, 0.37, 0.82, 0.92], [0, 1, 1, 0]);
-  const revealProgress = smoothStep((scrollProgress - 0.68) / 0.25);
-  const revealOpacity = interpolate(scrollProgress, [0.675, 0.71, 1], [0, 1, 1]);
-  const carCommandOpacity = interpolate(scrollProgress, [0.57, 0.63, 0.7, 0.75], [0, 1, 1, 0]);
-  const carCommandScale = interpolate(scrollProgress, [0.57, 0.7, 0.75], [0.96, 1, 1.04]);
-  const fullContentOpacity = interpolate(revealProgress, [0, 0.1, 0.42, 1], [0, 0, 1, 1]);
-  // Start from the live infotainment bounds, then expand to the full app.
-  const commandWidth = Math.min(viewportSize.width * 0.78, 520);
-  const commandHeight = commandWidth / 2.08;
-  const commandTop = viewportSize.height * 0.39 - commandHeight / 2;
-  const commandLeft = (viewportSize.width - commandWidth) / 2;
+  const revealProgress = smoothStep((scrollProgress - 0.58) / 0.33);
+  const revealOpacity = interpolate(scrollProgress, [0.335, 0.37, 1], [0, 1, 1]);
+  // Follow the physical display while the cabin zooms, then expand from those exact bounds.
+  const commandRect = getCabinScreenRect(
+    cabinProgress,
+    viewportSize.width,
+    viewportSize.height,
+  );
   const revealStart = [
-    (commandTop / viewportSize.height) * 100,
-    (commandLeft / viewportSize.width) * 100,
-    ((viewportSize.height - commandTop - commandHeight) / viewportSize.height) * 100,
-    (commandLeft / viewportSize.width) * 100,
+    (commandRect.top / viewportSize.height) * 100,
+    ((viewportSize.width - commandRect.left - commandRect.width) / viewportSize.width) * 100,
+    ((viewportSize.height - commandRect.top - commandRect.height) / viewportSize.height) * 100,
+    (commandRect.left / viewportSize.width) * 100,
   ];
   const revealInsets = revealStart.map((value) => value * (1 - revealProgress));
-  const revealClip = `inset(${revealInsets[0]}% ${revealInsets[1]}% ${revealInsets[2]}% ${revealInsets[3]}% round ${10 * (1 - revealProgress)}px)`;
-  const dashboardScale = interpolate(revealProgress, [0, 1], [commandWidth / viewportSize.width, 1]);
-  const dashboardTranslateY = (0.39 - 0.5) * viewportSize.height * (1 - revealProgress);
+  const revealClip = `inset(${revealInsets[0]}% ${revealInsets[1]}% ${revealInsets[2]}% ${revealInsets[3]}% round ${commandRect.radius * (1 - revealProgress)}px)`;
+  const dashboardScaleX = interpolate(revealProgress, [0, 1], [commandRect.width / viewportSize.width, 1]);
+  const dashboardScaleY = interpolate(revealProgress, [0, 1], [commandRect.height / viewportSize.height, 1]);
+  const dashboardTranslateX = (commandRect.centerX - viewportSize.width / 2) * (1 - revealProgress);
+  const dashboardTranslateY = (commandRect.centerY - viewportSize.height / 2) * (1 - revealProgress);
   const stageShadeOpacity = interpolate(scrollProgress, [0, 0.36, 0.62, 0.9], [0.1, 0.08, 0.14, 0.68]);
   const navOpacity = interpolate(scrollProgress, [0, 0.74, 0.84], [1, 1, 0]);
   const skipOpacity = interpolate(scrollProgress, [0, 0.75, 0.84], [1, 1, 0]);
@@ -169,17 +169,9 @@ export function CinematicShowcase({ onSkip, onLogin }) {
           <div className="cinematic-shade" style={{ opacity: stageShadeOpacity }} />
         </div>
 
-        <CarCommandCenter
-          style={{
-            opacity: carCommandOpacity,
-            transform: `translate(-50%, -50%) scale(${carCommandScale})`,
-          }}
-        />
-
         <div className="dashboard-reveal" style={{ opacity: revealOpacity, clipPath: revealClip }}>
           <FullCommandCenter
-            contentOpacity={fullContentOpacity}
-            style={{ transform: `translateY(${dashboardTranslateY}px) scale(${dashboardScale})` }}
+            style={{ transform: `translate(${dashboardTranslateX}px, ${dashboardTranslateY}px) scale(${dashboardScaleX}, ${dashboardScaleY})` }}
           />
         </div>
 

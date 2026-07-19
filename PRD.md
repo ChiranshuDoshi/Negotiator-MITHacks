@@ -20,11 +20,11 @@ A first-time visitor understands within one short scroll journey that PolicyScou
 
 ## Scope
 
-- Scroll-pinned cinematic sequence: a damped camera push from moving straight-rear follow into a scroll-scrubbed cabin video, then a full-viewport dashboard reveal.
+- Scroll-pinned cinematic sequence: a damped straight-rear camera push, one obscured rear-window handoff, one continuous cabin push, then a full-viewport dashboard reveal.
 - Persistent `Try live demo`, `Log in`, and `Skip intro` controls.
 - Interactive three-stage demo: vehicle input, five simulated calls, negotiated result.
 - Final evidence: original and final prices, savings, target status, unchanged coverage, audio waveform, transcript excerpt, and replay clips.
-- Desktop and mobile responsive behavior.
+- Desktop Web behavior; a dedicated phone treatment is out of scope for this iteration.
 - Reduced-motion path.
 - Loading, active, success, and restart states for the demo.
 
@@ -53,14 +53,15 @@ A first-time visitor understands within one short scroll journey that PolicyScou
 - Scroll progress visibly controls every cinematic stage; the sequence does not autoplay independently.
 - The exterior follow, rear windshield, cabin pass-through, cockpit, and product reveal read as one continuous forward camera move without a visible slideshow cadence.
 - Adjacent cinematic anchors preserve the vehicle centerline, camera height, lighting, and subject scale progression, while spatial zoom hides the anchor change at peak camera velocity.
-- The rear-window-to-dashboard half uses continuous 60fps scroll-scrub media with dedicated intermediate camera positions; no whole-frame image switch is visible during normal wheel or trackpad scrolling.
-- The dashboard reveal begins at the physical infotainment-screen position and ends edge-to-edge with no persistent bezel, floating card, or second embedded result panel.
+- Each camera segment uses one stable raster source plus continuous transform; the independently generated far-car and seat-by-seat frames are not part of the runtime path.
+- The only exterior-to-interior source change is hidden inside a short dark rear-window handoff, preventing double-car or double-seat ghosting.
+- The exact same dark result interface is already visible when the cabin appears, stays aligned to all four physical infotainment edges during the cabin zoom, and then scales edge-to-edge without a white overlay, floating card, or second UI switch.
 - Scroll-wheel deltas are lightly damped so the camera continues smoothly instead of jumping directly between sampled progress values.
 - The user can skip directly to the demo at any time.
 - The demo can be completed from start to result without a backend.
 - System recommendation and user selection use separate labels.
 - Final evidence is visible without leaving the result view.
-- At `390x844`, no horizontal overflow, clipped primary action, or overlapping copy exists.
+- At the desktop review viewports, no horizontal overflow, clipped primary action, or overlapping copy exists.
 - Under `prefers-reduced-motion`, the cinematic camera push is removed and direct demo access remains available.
 - Keyboard focus is visible and all core controls are reachable.
 - Browser console has no errors during the primary journey.

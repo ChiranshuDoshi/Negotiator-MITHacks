@@ -4,7 +4,7 @@ const JOURNEY_END = 0.3;
 const COVER_OVERSCAN = 1.04;
 
 const JOURNEY_FRAMES = [
-  { src: "/assets/rear-follow-medium.webp", focal: [0.5, 0.55] },
+  { src: "/assets/rear-follow-medium.webp", focal: [0.5, 0.46] },
 ];
 
 function clamp(value, min = 0, max = 1) {
@@ -46,7 +46,7 @@ function drawTransitionVignette(context, width, height, energy) {
 
 function renderJourney(context, images, width, height, progress, reducedMotion) {
   if (reducedMotion) {
-    drawCover(context, images[0], width, height, 1, JOURNEY_FRAMES[0].focal, 1, [0.09, 0.025]);
+    drawCover(context, images[0], width, height, 1, JOURNEY_FRAMES[0].focal, 1, [0, 0]);
     return { frameIndex: 0, blend: 0, energy: 0 };
   }
 
@@ -54,7 +54,7 @@ function renderJourney(context, images, width, height, progress, reducedMotion) 
   const approach = Math.pow(smoothstep(0, 1, phase), 1.6);
   const passThrough = smoothstep(0.78, 1, phase);
   const currentScale = 1 + 3.2 * approach;
-  const currentOffset = [0.09 * (1 - approach), 0.025 * (1 - approach)];
+  const currentOffset = [0, 0];
 
   drawCover(
     context,

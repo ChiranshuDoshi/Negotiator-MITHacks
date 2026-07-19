@@ -3,16 +3,16 @@
 ## Scope
 
 - Target: desktop Web prototype on branch `person1-UI`.
-- Reference: `design-previews/policyscout-cinematic-showcase.png`.
-- Runtime: `http://127.0.0.1:4174/` at the in-app desktop viewport (`1512x771`).
+- References: Mercury's live hero-to-dashboard scroll sequence and `design-previews/policyscout-cinematic-showcase.png`.
+- Runtime: `http://127.0.0.1:4176/` at the in-app desktop viewport (`1280x720`, with a constrained desktop-width pass).
 - Comparison sheet: `frontend/qa/design-comparison.jpg`.
 
 ## Visual Comparison
 
 - Typography: Manrope display type and IBM Plex Sans interface type preserve the reference's premium editorial-to-product transition.
-- Layout: the implementation extends the reference into ten center-axis beats: open road, medium follow, close follow, rear-body approach, rear-window threshold, glass portal, rear-seat entry, seat pass-through, cockpit lock, and dashboard reveal.
-- Color: dark evergreen vehicle scenes transition into a restrained white, ink, and teal insurance workspace.
-- Assets: ten production cinematic WebP scenes use one consistent dark emerald SUV, dawn environment, and interior material language. A Canvas camera now supplies continuous scale, radial motion trails, and the rear-glass portal rather than switching stacked DOM images.
+- Layout: the implementation now uses three continuous spatial beats: medium rear follow, cabin-to-screen push, and screen-to-viewport expansion. The distant opening and repeated seat beats were removed.
+- Color: the dark evergreen vehicle scene now expands into the same dark ink-and-mint result command center, avoiding a white overlay during the Mercury-style handoff.
+- Assets: runtime cinematic motion uses only `rear-follow-medium.webp` and `between-front-seats.webp`. Each segment moves by continuous transform, and the single source change is hidden inside a short dark rear-window handoff.
 - Product content: the expanded screen resolves into the working quote and negotiation product rather than a static marketing mock.
 
 Evidence:
@@ -23,6 +23,9 @@ Evidence:
 - `frontend/qa/journey-sequence-contact.jpg`
 - `frontend/qa/canvas-cockpit-arrival.jpg`
 - `frontend/qa/canvas-demo-handoff.jpg`
+- `frontend/qa/mercury-live/hero-transition-contact.jpg`
+- `frontend/qa/policyscout-spatial-reveal-mid.png`
+- `frontend/qa/infotainment-alignment-comparison.jpg`
 - `frontend/qa/design-comparison.jpg`
 
 ## Interaction Verification
@@ -35,11 +38,10 @@ Evidence:
 - Final result shows `$256` and `15.2%` savings, target achieved, and four unchanged coverage rows.
 - Full negotiation audio play/pause works through browser speech synthesis.
 - Three timestamped Good negotiation replay clips select independently and move the audio playhead.
-- All ten cinematic scene assets loaded into the Canvas renderer; sampled scroll coverage had no blank frame.
-- Twenty-one settled journey samples preserve a monotonic center-axis push from the distant SUV to the infotainment screen.
-- A twelve-sample large scroll jump advanced through the Canvas frame index without reversing progress; both scroll target and rendered camera use damping.
-- Adjacent source changes happen at peak radial zoom energy, while the rear-window threshold uses a feathered spatial portal instead of a full-frame dissolve.
-- Rear-window and cabin transitions keep the infotainment screen on the same center camera axis.
+- The runtime contains zero video elements and no frame-index/image-sequence switching; sampled scroll coverage had no blank frame.
+- Exterior and cabin segments each preserve a monotonic center-axis push because every segment holds one raster source.
+- The rear-window handoff reaches a dark threshold before the cabin source appears, preventing double-car and double-seat exposure.
+- The same dark result DOM is visible in the physical screen, at the mid-scale state, and at full viewport size; reverse scroll returns through the same transforms.
 - Desktop horizontal overflow: `0px`.
 - The demo jump lands at `demoTop: 0`; the vehicle WebP loads at `1448x1086` and no image reports a failed intrinsic size.
 
@@ -53,6 +55,11 @@ Evidence:
 - P2: adding frames would have pushed the raster payload above the previous media budget. Converted every runtime image to WebP; the eleven loaded product and cinematic assets now total about `1.0MB` on disk.
 - P2: even the denser image stack still exposed frame changes because adjacent source framing differed. Replaced stacked image opacity with one Canvas camera, matched outgoing zoom to incoming subject scale, removed reverse zoom on entry, and hid source changes inside a radial speed burst.
 - P2: the first rear-glass reveal looked like a hard rectangular screen. Expanded the portal from the full rear-window opening, added a feathered edge layer, and accelerated the final expansion through the cabin.
+- P2: independently generated far-car and seat intermediates still changed vehicle geometry and created visible jumps. Removed them from the runtime path and shortened the stage from `380vh` to `260vh`.
+- P2: a scrubbed cabin video reduced source changes but introduced seek lag and too many interior beats. Replaced it with one cabin raster and a direct transform toward the center display.
+- P2: the light result dashboard looked like a floating overlay during expansion. Reused one dark result DOM from the physical infotainment bounds through the full viewport, with continuous X/Y scale and clip-path interpolation.
+- P2: the result UI initially appeared only near the end of the cabin push and used fixed bounds, so it drifted away from the physical screen during zoom. Measured the source display's inner pixel bounds, projected them through the same `object-fit: cover` and cabin scale math, and used the resulting live rectangle for clip, translation, and X/Y scale. The small result is now visible on cabin entry and remains flush with all four display edges.
+- P2: the exterior close-up centered on the tailgate, making the straight push feel too low. Moved the Canvas focal height from `55%` to `46%` so the rear window remains the camera target as the vehicle fills the viewport.
 
 ## Residual P3 Notes
 
@@ -60,6 +67,8 @@ Evidence:
 - Audio uses local browser speech synthesis; production should replace it with recorded or streamed ElevenLabs audio.
 - This showcase is intentionally desktop-only for the current review; a mobile cinematic treatment is out of scope by request.
 - A reduced-motion CSS path is implemented; the current desktop browser runtime did not expose media emulation for an automated screenshot.
+- Fresh-load console output on port `4176` contained only Vite connection and React DevTools informational messages; no warnings or errors.
+- `npm run build`: passed with 4,979 modules transformed.
 
 final result: passed
 
