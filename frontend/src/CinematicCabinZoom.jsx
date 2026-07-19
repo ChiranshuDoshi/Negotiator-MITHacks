@@ -51,7 +51,7 @@ export function CinematicCabinZoom({ progress, style }) {
     <div className="cinematic-cabin-zoom" style={style} aria-hidden="true">
       <img
         className="cabin-zoom-image cabin-zoom-image--wide"
-        src="/assets/between-front-seats.webp"
+        src="/assets/between-front-seats-clean.webp"
         alt=""
         style={{
           transform: `scale(${imageScale})`,

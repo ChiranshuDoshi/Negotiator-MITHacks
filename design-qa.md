@@ -120,3 +120,37 @@ final result: passed
 - Browser comment follow-up: rebuilt the concession trail as one four-segment ledger with separate round/time metadata, larger price hierarchy, multiline concession labels, dedicated annual impact rows, and a bottom connector rail. The refined state is recorded in `frontend/qa/dashboard-final/07-concession-trail-refined.png` and remains overflow-free at the more constrained `1280x720` QA viewport.
 
 final dashboard result: passed
+
+## Voice Guardrail Brand Mark QA
+
+### Scope
+
+- Source visual truth: `/Users/jj/.codex/generated_images/019f76bc-c8ff-7ea0-90ce-71ccd24958fc/exec-7072e674-6ecd-4f3d-9544-5f78cda91b5a.png`.
+- Implementation screenshots: `/private/tmp/policyscout-brand-implementation-v2.png` and `/private/tmp/policyscout-brand-dashboard-v3.png`.
+- Viewport: `1272x745`.
+- States: dark cinematic hero and light profile dashboard.
+- Full comparison: `/private/tmp/policyscout-brand-full-compare-v2.png`.
+- Focused comparison: `/private/tmp/policyscout-brand-focused-compare-v2.png`.
+
+### Findings
+
+- No actionable P0, P1, or P2 issue remains.
+- Typography: the existing Manrope wordmark is unchanged; the optical baseline and gap are balanced at both sizes.
+- Spacing and layout: the mark uses stable `40px` hero and `32px` dashboard dimensions.
+- Colors: mint on dark and deep teal on light preserve contrast while using one shared silhouette.
+- Asset fidelity: a generated alpha asset is delivered as a lossless WebP CSS mask; there is no handcrafted SVG or CSS drawing, visible halo, or background box.
+- Meaning: the detailed master retains the protected central road plus active voice-wave guardrails at small sizes.
+- Copy: `PolicyScout` and `Insurance operations` remain unchanged.
+- Interactions: `Skip to demo` was exercised successfully and the browser reported no console errors.
+
+### Comparison History
+
+- P2: the first simplified master read as Wi-Fi or broadcast waves and lost the negotiation guardrail character.
+- Fix: switched to the detailed generated master, increased the hero mark from `36px` to `40px`, increased the dashboard mark from `30px` to `32px`, and used a `145%` mask scale.
+- Post-fix evidence: `/private/tmp/policyscout-brand-focused-compare-v2.png`.
+
+### Residual P3
+
+- The generated master is optically simplified from the concept image so its road and voice details stay legible at `32-40px`.
+
+final result: passed

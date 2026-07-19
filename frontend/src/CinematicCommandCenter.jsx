@@ -97,7 +97,7 @@ export function FullCommandCenter({ contentOpacity = 1, style, themeProgress = 0
     <div className="full-command-center" style={{ ...theme, ...style, opacity: contentOpacity }} aria-hidden="true">
       <header className="full-command-topbar">
         <div className="full-command-brand">
-          <span className="brand-mark">PS</span>
+          <span className="brand-mark" aria-hidden="true" />
           <div><strong>PolicyScout</strong><small>Auto insurance</small></div>
         </div>
         <div className="full-command-path"><span>Quotes</span><i /> <strong>Negotiation result</strong></div>
