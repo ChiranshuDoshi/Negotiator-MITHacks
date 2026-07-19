@@ -1,0 +1,68 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2022"
+    ],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/app/*": ["./src/app/*"],
+      "@/backend/*": ["./src/backend/*"],
+      "@/domain/negotiation": ["./src/backend/negotiator/domain/negotiation"],
+      "@/domain/negotiation/*": ["./src/backend/negotiator/domain/negotiation/*"],
+      "@/domain/handoff": ["./src/backend/negotiator/domain/handoff"],
+      "@/domain/handoff/*": ["./src/backend/negotiator/domain/handoff/*"],
+      "@/domain/recommendation": ["./src/backend/negotiator/domain/recommendation"],
+      "@/domain/recommendation/*": ["./src/backend/negotiator/domain/recommendation/*"],
+      "@/server/services/conversations": ["./src/backend/negotiator/services/conversations"],
+      "@/server/services/conversations/*": ["./src/backend/negotiator/services/conversations/*"],
+      "@/integrations/elevenlabs": ["./src/backend/negotiator/integrations/elevenlabs"],
+      "@/integrations/elevenlabs/*": ["./src/backend/negotiator/integrations/elevenlabs/*"],
+      "@/domain/equivalence": ["./src/backend/market-research/domain/equivalence"],
+      "@/domain/equivalence/*": ["./src/backend/market-research/domain/equivalence/*"],
+      "@/domain/normalization": ["./src/backend/market-research/domain/normalization"],
+      "@/domain/normalization/*": ["./src/backend/market-research/domain/normalization/*"],
+      "@/domain/red-flags": ["./src/backend/market-research/domain/red-flags"],
+      "@/domain/red-flags/*": ["./src/backend/market-research/domain/red-flags/*"],
+      "@/domain/research": ["./src/backend/market-research/domain/research"],
+      "@/domain/research/*": ["./src/backend/market-research/domain/research/*"],
+      "@/domain/synthetic-quotes": ["./src/backend/market-research/domain/synthetic-quotes"],
+      "@/domain/synthetic-quotes/*": ["./src/backend/market-research/domain/synthetic-quotes/*"],
+      "@/integrations/tavily": ["./src/backend/market-research/integrations/tavily"],
+      "@/integrations/tavily/*": ["./src/backend/market-research/integrations/tavily/*"],
+      "@/config/insurance-lines": ["./src/backend/shared/config/insurance-lines"],
+      "@/config/insurance-lines/*": ["./src/backend/shared/config/insurance-lines/*"],
+      "@/demo/quotes/*": ["./src/backend/shared/demo/quotes/*"],
+      "@/domain/schemas/*": ["./src/backend/shared/schemas/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "tests/**/*.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
