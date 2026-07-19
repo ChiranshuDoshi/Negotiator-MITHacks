@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { ConfirmedQuoteRequestSchema } from "@/domain/schemas/person4";
 
 describe("Person 4 integration contract", () => {
-  it("accepts the provider-safe request in the synthetic profile", () => {
+  it("accepts the provider-safe request in the demo profile", () => {
     const fixturePath = resolve(process.cwd(), "tests/fixtures/fake_person_profile.json");
     const profile = JSON.parse(readFileSync(fixturePath, "utf8")) as { confirmedQuoteRequest: unknown };
 

@@ -1,12 +1,12 @@
 # PolicyScout — Person 4 Intelligence and Person 3 Voice Demo
 
-This branch implements PolicyScout's Person 4 market-research, synthetic quote-intelligence, coverage-equivalence, and recommendation handoff slice.
+This branch implements PolicyScout's Person 4 market research, voice quote collection, coverage-equivalence, and recommendation handoff slice.
 
 It also includes Person 3's ElevenLabs voice harness and bounded negotiation demo. Person 3 consumes the validated Person 4 handoff; it does not reimplement provider research, quote normalization, recommendations, or negotiation-event validation.
 
 The research service accepts a provider-safe confirmed quote request and searches for auto-insurance providers using the user's state, ZIP code, requested coverage, and exclusions. It ranks eligible providers from cited public evidence. Public web prices, averages, and marketing claims are never treated as personalized quotes.
 
-For the hackathon demo, Person 4 does not place first-round quote calls. It maps a clearly labeled synthetic quote scenario to each current Top Five provider, normalizes and compares those five outcomes, recommends the best qualifying offer, and automatically prepares that company and price for Person 3's later negotiation call. The synthetic values are not supplied by an insurer and are not binding quotes.
+For the hackathon demo, a separate Calling Agent gathers one simulated, transcript-backed quote from a human acting as each current Top Five provider. It receives a provider-safe profile brief, requests an all-in policy-term quote, and closes once the quote is recorded. After all five valid calls, PolicyScout selects the lowest comparable all-in price and automatically prepares that company for the later Negotiator call. These demo quotes are non-binding and cannot be used as competing-offer leverage.
 
 ## Setup
 
@@ -70,39 +70,27 @@ corepack pnpm talk:elevenlabs -- --live
 
 The live command uses the prepared `.artifacts/person3/negotiation-session.json`, streams the default microphone and speakers, consumes ElevenLabs credits, and ends on Ctrl-C. Use headphones for reliable interruption handling. It keeps one conversation open so the agent can use the current call's history, and it never sends the private target or range to ElevenLabs or records a negotiation result from this terminal smoke check. A teammate connecting a frontend should pass the returned safe `userDisplayName` as ElevenLabs dynamic variable `user_display_name`; no frontend is required for this backend flow.
 
-## Native Twilio outbound calling
+## Prepare voice quote collection
 
-The outbound-call route uses ElevenLabs' native Twilio integration: ElevenLabs places the call with the Twilio number you import, so this application does not store a Twilio SID or Auth Token, operate a media relay, or expose Twilio webhooks. First add a purchased Twilio number (inbound and outbound) or a verified Twilio caller ID (outbound only) in ElevenLabs, then set the returned non-secret ID as `ELEVENLABS_TWILIO_PHONE_NUMBER_ID`.
-
-Set `TWILIO_OUTBOUND_ALLOWED_DESTINATIONS` to a comma-separated list of consented E.164 destinations. The protected route will not place calls outside that list. For an initial personal-phone smoke test, include your mobile number there and call the route with the same number:
+Run research first and save its response as `research.json`. Then prepare the five-provider collection from the fake profile:
 
 ```bash
-curl -X POST http://localhost:3000/api/twilio/outbound-call \
-  -H "Authorization: Bearer $POLICYSCOUT_INTERNAL_API_KEY" \
-  -H "Idempotency-Key: personal-phone-smoke-001" \
-  -H "Content-Type: application/json" \
-  -d '{"toNumber":"+15551234567"}'
+corepack pnpm prepare:elevenlabs:quote-collection -- \
+  --profile tests/fixtures/fake_person_profile.json \
+  --research .artifacts/person4/<run-time>/research.json \
+  --artifact-dir .artifacts/person4/<run-time>
 ```
 
-The route requires `DEMO_MODE=true`, `ELEVENLABS_API_KEY`, `ELEVENLABS_NEGOTIATOR_AGENT_ID`, `ELEVENLABS_TWILIO_PHONE_NUMBER_ID`, the destination allowlist, and an `Idempotency-Key` header. It is intentionally unavailable in production. It starts a minimal agent call without negotiation context, recordings, or retries, and returns only the ElevenLabs conversation ID and Twilio Call SID. Reusing a key for the same destination returns the original outcome without dialing again; reuse it for another destination is rejected. The idempotency guard is process-local for this demo scaffold; production use requires durable request storage and an atomic claim keyed to the authenticated caller and idempotency key before enabling dialing. Automated tests use fake gateways and never place calls.
+By default, the command writes a private local session file, generates five deterministic simulated provider conversations, and writes `conversations.json`, `raw-quotes.json`, `normalized-quotes.json`, `recommendation.json`, and `person3-handoff.json` to the supplied artifact directory. These transcripts are dashboard-ready demo data; the quote and handoff remain simulated, non-binding, and ineligible for competing-offer leverage.
 
-## Verify the live Person 4 flow
-
-With both keys in `.env`, run:
-
-```bash
-corepack pnpm verify:person4
-```
-
-The verifier starts a temporary local server, requires a real Tavily-backed Top Five with official carrier sources, generates and normalizes the five fake quote scenarios, and writes the recommendation payload for Person 3. Artifacts are saved under `.artifacts/person4/<run-time>/`; `person3-handoff.json` is the final handoff. The command exits nonzero if any stage falls back to mock data, returns fewer than five providers, loses evidence, or produces an invalid handoff.
-
-To use an already-running server, pass `--base-url http://127.0.0.1:3000`. To use another provider-safe profile, pass `--profile path/to/profile.json`.
+Use `--interactive` when you want the existing microphone path instead. With `DEMO_MODE=true`, open `/dev/elevenlabs`, choose **Quote collection**, paste a printed reference, and start each browser-microphone call. The Calling Agent supplies the provider-safe profile facts, captures an all-in price, term, fee/tax confirmation, requested-coverage confirmation, effective date, and quote-valid-until date, then stops.
 
 ## Main APIs
 
 - `POST /api/research/run` — run mock or live provider research and deterministic Top Five ranking.
-- `POST /api/quotes/synthetic` — map the five versioned demo quote scenarios to the current ranked providers.
 - `POST /api/quotes/normalize` — normalize one or more structured quote outcomes and add comparable-median red flags.
+- `POST /api/conversations/credentials` — issue local demo credentials for voice smoke, quote collection, or negotiation.
+- `POST /api/conversations/collections/:collectionId` — return the local quote-collection status and final recommendation.
 - `POST /api/negotiations/validate-goal` — verify the selected quote/provider and emit a disclosure-safe negotiator view.
 - `POST /api/negotiations/leverage` — choose truthful, same-request competing leverage.
 - `POST /api/negotiations/validate-event` — validate before/after evidence and derive an immutable effective offer.
@@ -112,12 +100,10 @@ All request bodies are size-bounded and validated with strict Zod schemas. Route
 
 ## Demo workflow
 
-1. Submit the confirmed, provider-safe request to `/api/research/run` and retain its request hash, evidence, and Top Five ranking.
-2. Submit that exact request and ranking to `/api/quotes/synthetic`. The endpoint rejects missing, duplicate, mismatched, or non-Top-Five provider mappings.
-3. Normalize the generated outcomes with `/api/quotes/normalize`.
-4. Submit the request, ranking, evidence, and normalized quotes to `/api/recommendations`. Its `negotiationHandoff.target` contains the automatically recommended company, effective price, coverage, term, quote-validity deadline, and human-verification requirement for Person 3.
-
-The editable demo catalog is `src/demo/quotes/personal-auto-scenarios.json`. Provider identity always comes from the live ranking; only the quote scenario values come from this versioned fake dataset. There are no quote-call recordings or transcripts in this flow, and synthetic competitors are never represented as insurer-verified leverage.
+1. Submit the confirmed, provider-safe request to `/api/research/run` and retain the Top Five research artifact.
+2. Prepare the quote collection. It generates five simulated calls by default; add `--interactive` to complete one local microphone call for each provider in `/dev/elevenlabs` instead.
+3. The collection validates and normalizes the five transcript-backed outcomes, ranks them by lowest valid all-in policy-term cost, and writes the handoff artifacts.
+4. Run the existing Negotiator preparation command with the generated `person3-handoff.json` when a later negotiation target is available.
 
 ## Verification
 

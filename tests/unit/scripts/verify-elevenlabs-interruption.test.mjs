@@ -156,7 +156,7 @@ function replaceResponse(result, index, text) {
 }
 
 describe("live ElevenLabs interruption verifier", () => {
-  it("imports without the ElevenLabs SDK and accepts a complete synthetic result", () => {
+  it("imports without the ElevenLabs SDK and accepts a complete simulated result", () => {
     assert.deepEqual(evaluate(passingResult()), []);
   });
 

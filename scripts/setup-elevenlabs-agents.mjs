@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 export const AGENT_ENV_KEYS = {
   "PolicyScout Voice Smoke": "ELEVENLABS_VOICE_SMOKE_AGENT_ID",
   "PolicyScout Negotiator": "ELEVENLABS_NEGOTIATOR_AGENT_ID",
+  "PolicyScout Quote Caller": "ELEVENLABS_QUOTE_CALLER_AGENT_ID",
 };
 
 const COMPLIANCE_OVERLAY = `
@@ -14,7 +15,7 @@ const COMPLIANCE_OVERLAY = `
 
 Use tactical empathy, concise labels, mirrors, calibrated How/What questions, accurate summaries, and deliberate pauses. Never use Ackerman anchoring, negative leverage, or perceived leverage.
 
-The platform sends the first message once. Never repeat, paraphrase, or restart that opening. The quote and conversation may be synthetic and non-binding; if asked about their status, answer truthfully, but do not volunteer that status during ordinary negotiation.
+The platform sends the first message once. Never repeat, paraphrase, or restart that opening. The quote and conversation may be simulated and non-binding; if asked about their status, answer truthfully, but do not volunteer that status during ordinary negotiation.
 
 Before each reply, silently reconstruct a current-call ledger from the full conversation history: current stage; last provider-confirmed price; every exact provider claim, objection, concession, and correction; the unresolved question; and explicit refusals across distinct paths. Corrections supersede prior claims. Clarify uncertainty instead of guessing. When useful, reuse the provider's exact, still-current words in a neutral mirror, label, summary, or calibrated question. Never distort their words or reuse wording that was corrected, superseded, or uncertain. When interrupted, address the interruption first, then resume the unresolved objective without restarting.
 
@@ -35,6 +36,7 @@ Give one final verified readback and wait for provider confirmation before recor
 const VOICE_SMOKE_PROMPT = `You are PolicyScout's private voice smoke-test agent. Reply briefly, clearly, and without collecting personal information.`;
 const DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
 export const NEGOTIATOR_FIRST_MESSAGE = "Hi, I’m PolicyScout, an AI agent working on behalf of {{user_display_name}}. We’re reviewing {{selected_provider_name}}’s quote—what can you do to lower the price without changing coverage?";
+export const QUOTE_CALLER_FIRST_MESSAGE = "Hi, I’m PolicyScout, an AI agent calling to request a first-round quote from {{quote_provider_name}}. The requested policy profile is: {{quote_profile_brief}}. Could you provide an all-in quote for that coverage?";
 
 const NEGOTIATOR_TURN_CONFIG = {
   turnEagerness: "patient",
@@ -79,6 +81,42 @@ export const NEGOTIATOR_CLIENT_TOOLS = [
     : { type: "object", required: [], properties: {} },
 }));
 
+export const QUOTE_CALLER_CLIENT_TOOLS = [{
+  type: "client",
+  name: "record_quote",
+  description: "Record one provider-confirmed first-round quote after every required quote detail has been explicitly confirmed.",
+  expectsResponse: true,
+  responseTimeoutSecs: 10,
+  parameters: {
+    type: "object",
+    required: ["totalPolicyTermCostCents", "policyTermMonths", "feesAndTaxesIncluded", "coverageMatchesRequested", "effectiveDate", "quoteValidUntil", "providerResponse"],
+    properties: {
+      totalPolicyTermCostCents: { type: "integer", minimum: 1, description: "Exact provider-confirmed all-in policy-period total in integer cents." },
+      policyTermMonths: { type: "integer", minimum: 1, description: "Exact provider-confirmed policy term in whole months." },
+      feesAndTaxesIncluded: { type: "boolean", description: "True only after the provider explicitly confirms whether all fees and taxes are included in the recorded total." },
+      coverageMatchesRequested: { type: "boolean", description: "True only after the provider explicitly confirms the quote matches the requested coverage." },
+      effectiveDate: { type: "string", format: "date", description: "Exact provider-confirmed effective date for the quoted policy." },
+      quoteValidUntil: { type: "string", format: "date-time", description: "Exact provider-confirmed timestamp through which the quote remains valid." },
+      providerResponse: { type: "string", description: "Exact provider response confirming the recorded quote details." },
+    },
+  },
+}];
+
+export const QUOTE_CALLER_PROMPT = `You are PolicyScout Quote Caller, a first-round quote-gathering caller. Request a quote from {{quote_provider_name}} for this policy profile: {{quote_profile_brief}}.
+
+Your sole objective is to collect a provider-confirmed, first-round quote. Do not negotiate, bargain, request discounts, discuss rankings, targets, ceilings, competing offers, or which provider the customer may choose. Do not invent, calculate, assume, or imply quote facts, coverage, dates, fees, taxes, or eligibility.
+
+Ask for and confirm all of these details: the all-in policy-period total, policy term, whether fees and taxes are included, whether the quote matches the requested coverage, the effective date, and the date and time until which the quote is valid. The recorded total must include all fees and taxes; if it does not, ask the provider for its all-inclusive policy-period total. If any detail is unavailable or unconfirmed, ask only a concise follow-up needed to obtain it; do not call the tool.
+
+Call record_quote exactly once and only after the provider explicitly confirms every required detail. Record only the provider's confirmed values and exact response. After the tool call, close the conversation politely without further quote discussion. If asked, state truthfully that this is a simulated, non-binding demo collection; do not volunteer that status during an ordinary quote request.`;
+
+const QUOTE_CALLER_MODEL_CONFIG = {
+  llm: "gemini-2.5-flash",
+  temperature: 0.1,
+  maxTokens: 180,
+  ignoreDefaultPersonality: true,
+};
+
 export function buildNegotiatorPrompt(policyText) {
   if (!policyText?.trim()) throw new Error("negotiation.md is empty; cannot provision the negotiator agent");
   const currentPolicy = policyText
@@ -90,15 +128,16 @@ export function buildNegotiatorPrompt(policyText) {
 
 function agentBody(name, prompt, voiceId, tools = []) {
   const negotiator = name === "PolicyScout Negotiator";
+  const quoteCaller = name === "PolicyScout Quote Caller";
   return {
     name,
     tags: ["policyscout", "person3", "managed-by-script"],
     conversationConfig: {
       agent: {
-        firstMessage: negotiator ? NEGOTIATOR_FIRST_MESSAGE : "PolicyScout voice is ready.",
+        firstMessage: negotiator ? NEGOTIATOR_FIRST_MESSAGE : quoteCaller ? QUOTE_CALLER_FIRST_MESSAGE : "PolicyScout voice is ready.",
         language: "en",
         ...(negotiator ? { disableFirstMessageInterruptions: true } : {}),
-        prompt: { prompt, ...(negotiator ? NEGOTIATOR_MODEL_CONFIG : {}), ...(tools.length ? { tools } : {}) },
+        prompt: { prompt, ...(negotiator ? NEGOTIATOR_MODEL_CONFIG : quoteCaller ? QUOTE_CALLER_MODEL_CONFIG : {}), ...(tools.length ? { tools } : {}) },
       },
       ...(negotiator ? { turn: NEGOTIATOR_TURN_CONFIG } : {}),
       tts: { voiceId },
@@ -114,6 +153,7 @@ export function buildAgentSpecs(voiceId = DEFAULT_VOICE_ID, negotiatorPolicy = "
   return [
     agentBody("PolicyScout Voice Smoke", VOICE_SMOKE_PROMPT, voiceId),
     agentBody("PolicyScout Negotiator", buildNegotiatorPrompt(negotiatorPolicy), voiceId, NEGOTIATOR_CLIENT_TOOLS),
+    agentBody("PolicyScout Quote Caller", QUOTE_CALLER_PROMPT, voiceId, QUOTE_CALLER_CLIENT_TOOLS),
   ];
 }
 
@@ -202,7 +242,7 @@ export async function main(argv = process.argv.slice(2), dependencies = {}) {
   if (options.apply) await upsertAgentIds(resolve(root, ".env.local"), results);
   console.log(`${options.apply ? "Applied" : "Dry run"} ElevenLabs plan:`);
   for (const [name, result] of Object.entries(results)) console.log(`  ${name}: ${result.action}${result.agentId ? ` (${result.agentId})` : ""}`);
-  if (!options.apply) console.log("No changes made. Re-run with --apply to provision and write the two non-secret agent IDs.");
+  if (!options.apply) console.log("No changes made. Re-run with --apply to provision and write the three non-secret agent IDs.");
   return results;
 }
 

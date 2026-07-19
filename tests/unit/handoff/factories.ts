@@ -12,9 +12,9 @@ import { makeCandidate, makeQuoteRequest } from "../research/factories";
 
 export const GENERATED_AT = new Date("2026-07-18T12:00:00.000Z");
 export const QUOTE_VALID_UNTIL = "2026-08-17T12:00:00.000Z";
-export const SYNTHETIC_SOURCE_ID = "synthetic-dataset-v1";
-export const SYNTHETIC_DISCLAIMER =
-  "This simulated quote is not supplied by the insurer and is not binding.";
+export const CONVERSATION_SOURCE_ID = "conversation-1";
+export const SIMULATED_CALL_DISCLAIMER =
+  "This simulated voice quote is not binding and requires human verification.";
 
 export interface HandoffFixture {
   recommendation: Recommendation;
@@ -24,27 +24,27 @@ export interface HandoffFixture {
   generatedAt: Date;
 }
 
-export function createSyntheticQuote(overrides: Partial<NormalizedQuote> = {}): NormalizedQuote {
+export function createConversationQuote(overrides: Partial<NormalizedQuote> = {}): NormalizedQuote {
   return createQuote({
-    sourceType: "synthetic_dataset",
-    sourceConversationId: null,
-    sourceArtifactId: SYNTHETIC_SOURCE_ID,
-    scenarioId: "best-value",
+    sourceType: "conversation",
+    sourceConversationId: CONVERSATION_SOURCE_ID,
+    sourceArtifactId: null,
+    scenarioId: null,
     quoteValidUntil: QUOTE_VALID_UNTIL,
     currency: "USD",
-    disclaimer: SYNTHETIC_DISCLAIMER,
+    disclaimer: SIMULATED_CALL_DISCLAIMER,
     expirationDate: "2027-07-31",
     requiresHumanVerification: true,
     ...overrides,
   });
 }
 
-export function createSyntheticEvidence(id: string): Evidence {
+export function createConversationEvidence(id: string): Evidence {
   return createEvidence({
     id,
-    type: "demo_fixture",
-    sourceId: SYNTHETIC_SOURCE_ID,
-    verificationStatus: "not_applicable",
+    type: "transcript",
+    sourceId: CONVERSATION_SOURCE_ID,
+    verificationStatus: "user_confirmed",
   });
 }
 
@@ -62,54 +62,49 @@ export function createProviderRanking(): ProviderRankingResult {
 
 export function createHandoffFixture(): HandoffFixture {
   const quotes = [
-    createSyntheticQuote({
+    createConversationQuote({
       quoteId: "quote-1",
       providerId: "provider-1",
-      scenarioId: "strong-coverage",
       effectiveComparisonCostCents: 1_000,
       annualizedCostCents: 1_000,
       coverageEquivalence: { status: "better_than_requested", differences: ["Higher liability limit"] },
       evidenceIds: ["evidence-target"],
     }),
-    createSyntheticQuote({
+    createConversationQuote({
       quoteId: "quote-2",
       providerId: "provider-2",
-      scenarioId: "alternative-2",
       effectiveComparisonCostCents: 1_100,
       annualizedCostCents: 1_100,
       evidenceIds: ["evidence-2"],
     }),
-    createSyntheticQuote({
+    createConversationQuote({
       quoteId: "quote-3",
       providerId: "provider-3",
-      scenarioId: "alternative-3",
       effectiveComparisonCostCents: 1_200,
       annualizedCostCents: 1_200,
       evidenceIds: ["evidence-3"],
     }),
-    createSyntheticQuote({
+    createConversationQuote({
       quoteId: "quote-4",
       providerId: "provider-4",
-      scenarioId: "alternative-4",
       effectiveComparisonCostCents: 1_300,
       annualizedCostCents: 1_300,
       evidenceIds: ["evidence-4"],
     }),
-    createSyntheticQuote({
+    createConversationQuote({
       quoteId: "quote-5",
       providerId: "provider-5",
-      scenarioId: "alternative-5",
       effectiveComparisonCostCents: 1_400,
       annualizedCostCents: 1_400,
       evidenceIds: ["evidence-5"],
     }),
   ];
   const evidence = [
-    createSyntheticEvidence("evidence-target"),
-    createSyntheticEvidence("evidence-2"),
-    createSyntheticEvidence("evidence-3"),
-    createSyntheticEvidence("evidence-4"),
-    createSyntheticEvidence("evidence-5"),
+    createConversationEvidence("evidence-target"),
+    createConversationEvidence("evidence-2"),
+    createConversationEvidence("evidence-3"),
+    createConversationEvidence("evidence-4"),
+    createConversationEvidence("evidence-5"),
   ];
   const recommendation = buildRecommendation({
     workflowId: "workflow-1",

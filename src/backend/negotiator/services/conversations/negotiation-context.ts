@@ -107,7 +107,7 @@ export function buildSafeNegotiationContext(input: NegotiationSessionInput): Saf
     allowedLeverageText,
     coverageSummary,
     aiDisclosure:
-      "I am an AI voice agent conducting a simulated demo using a synthetic quote that was not supplied by the insurer. The result is non-binding and requires human verification.",
+      "I am an AI voice agent conducting a simulated demo using a voice-collected quote that was not supplied by the insurer. The result is non-binding and requires human verification.",
     disclaimer: handoff.target.disclaimer,
     simulated: true,
     requiresHumanVerification: true,

@@ -17,7 +17,7 @@ async function artifacts(overrides = {}) {
     "research.json": { ranking: { selected: [{ providerId: "provider-1", providerName: "Provider One" }] } },
     "normalized-quotes.json": { quotes: [{ ...quote, ...overrides.quote }] },
     "person3-handoff.json": { workflowId: quote.workflowId, specificationHash: HASH, target: { ...target, ...overrides.target } },
-    "synthetic-quotes.json": { quotes: [{ evidence: [{ id: "source-evidence" }] }] },
+    "raw-quotes.json": { quotes: [{ evidence: [{ id: "source-evidence" }] }] },
   };
   await Promise.all(Object.entries(values).map(([name, value]) => writeFile(resolve(directory, name), JSON.stringify(value))));
   return directory;

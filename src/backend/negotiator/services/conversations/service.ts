@@ -12,6 +12,7 @@ import type {
   ConversationSession,
   ConversationState,
   NegotiationSessionInput,
+  QuoteCollectionSessionInput,
   TranscriptEntry,
 } from "./types";
 
@@ -30,12 +31,25 @@ type MutableSession = {
 export class ConversationSessionService {
   private readonly sessions = new Map<string, MutableSession>();
 
-  create(purpose: ConversationPurpose, negotiation?: NegotiationSessionInput): ConversationSession {
+  create(
+    purpose: ConversationPurpose,
+    negotiation?: NegotiationSessionInput,
+    quoteCollection?: QuoteCollectionSessionInput,
+  ): ConversationSession {
     if (purpose === "negotiation" && !negotiation) {
       throw new ConversationInvariantError("NEGOTIATION_CONTEXT_REQUIRED", "Negotiation context is required");
     }
     if (purpose === "voice_smoke" && negotiation) {
       throw new ConversationInvariantError("UNEXPECTED_NEGOTIATION_CONTEXT", "Voice smoke sessions cannot negotiate");
+    }
+    if (purpose === "quote_collection" && !quoteCollection) {
+      throw new ConversationInvariantError("QUOTE_COLLECTION_CONTEXT_REQUIRED", "Quote collection context is required");
+    }
+    if (purpose !== "quote_collection" && quoteCollection) {
+      throw new ConversationInvariantError("UNEXPECTED_QUOTE_COLLECTION_CONTEXT", "Quote collection context is not allowed");
+    }
+    if (purpose === "quote_collection" && negotiation) {
+      throw new ConversationInvariantError("UNEXPECTED_NEGOTIATION_CONTEXT", "Quote collection sessions cannot negotiate");
     }
 
     const now = new Date();
@@ -51,6 +65,7 @@ export class ConversationSessionService {
       transcript: [],
       errorCode: null,
       negotiation: negotiation ? buildSafeNegotiationContext(negotiation) : null,
+      quoteCollection: quoteCollection ? Object.freeze({ ...quoteCollection }) : null,
     };
     this.sessions.set(session.id, session);
     return this.snapshot(session);

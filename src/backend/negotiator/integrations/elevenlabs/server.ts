@@ -9,6 +9,7 @@ import type {
 const AGENT_ENV_BY_PURPOSE = {
   voice_smoke: "ELEVENLABS_VOICE_SMOKE_AGENT_ID",
   negotiation: "ELEVENLABS_NEGOTIATOR_AGENT_ID",
+  quote_collection: "ELEVENLABS_QUOTE_CALLER_AGENT_ID",
 } as const satisfies Record<ConversationPurpose, string>;
 
 const SDK_TIMEOUT_SECONDS = 10;

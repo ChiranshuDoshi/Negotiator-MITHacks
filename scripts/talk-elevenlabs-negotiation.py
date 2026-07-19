@@ -163,7 +163,7 @@ def build_dynamic_variables(session: dict[str, Any]) -> dict[str, Any]:
         "allowed_leverage_text": leverage,
         "coverage_summary": json.dumps(coverage, separators=(",", ":")),
         "quote_disclaimer": target.get(
-            "disclaimer", "Synthetic quote; not supplied by the insurer; non-binding; requires human verification."
+            "disclaimer", "Simulated quote; not supplied by the insurer; non-binding; requires human verification."
         ),
         "simulated": bool(target.get("simulated", True)),
         "requires_human_verification": bool(target.get("requiresHumanVerification", True)),

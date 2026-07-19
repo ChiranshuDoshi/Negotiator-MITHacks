@@ -8,14 +8,13 @@ import { OTHER_SPECIFICATION_HASH } from "../recommendation/factories";
 import {
   createHandoffFixture,
   QUOTE_VALID_UNTIL,
-  SYNTHETIC_DISCLAIMER,
-  SYNTHETIC_SOURCE_ID,
+  CONVERSATION_SOURCE_ID,
+  SIMULATED_CALL_DISCLAIMER,
 } from "./factories";
 
 const MISSING_METADATA_CASES: Array<[string, Partial<NormalizedQuote>]> = [
   ["source type", { sourceType: undefined }],
-  ["source artifact", { sourceArtifactId: undefined }],
-  ["scenario", { scenarioId: null }],
+  ["source conversation", { sourceConversationId: null }],
   ["currency", { currency: undefined }],
   ["effective cost", { effectiveComparisonCostCents: null }],
   ["policy term", { policyTermMonths: null }],
@@ -32,7 +31,8 @@ describe("automatic negotiation handoff", () => {
         providerId: "provider-1",
         providerName: "Provider provider-1",
         quoteId: "quote-1",
-        scenarioId: "strong-coverage",
+        scenarioId: null,
+        sourceConversationId: CONVERSATION_SOURCE_ID,
         currency: "USD",
         effectiveComparisonCostCents: 1_000,
         annualizedCostCents: 1_000,
@@ -42,7 +42,7 @@ describe("automatic negotiation handoff", () => {
         evidenceIds: ["evidence-target"],
         simulated: true,
         requiresHumanVerification: true,
-        disclaimer: SYNTHETIC_DISCLAIMER,
+        disclaimer: SIMULATED_CALL_DISCLAIMER,
       },
       requestedOutcome: "lower_price_with_same_or_better_coverage",
       selectionSource: "system_recommendation",
@@ -51,10 +51,10 @@ describe("automatic negotiation handoff", () => {
     expect(result.target.recommendationScore).toBe(
       createHandoffFixture().recommendation.rankedQualifyingQuotes[0]?.scoreBreakdown.weightedTotal,
     );
-    expect(result.target.selectionExplanation).toContain("Ranked deterministically");
+    expect(result.target.selectionExplanation).toContain("lowest valid all-in policy-term cost");
   });
 
-  it("uses exactly five Top Five providers with one synthetic quote and fixture evidence each", () => {
+  it("uses exactly five Top Five providers with one conversation quote and transcript evidence each", () => {
     const fixture = createHandoffFixture();
 
     expect(fixture.providerRanking.selected).toHaveLength(5);
@@ -66,14 +66,14 @@ describe("automatic negotiation handoff", () => {
     expect(
       fixture.evidence.every(
         (evidence) =>
-          evidence.type === "demo_fixture" &&
-          evidence.verificationStatus === "not_applicable" &&
-          evidence.sourceId === SYNTHETIC_SOURCE_ID,
+          evidence.type === "transcript" &&
+          evidence.verificationStatus === "user_confirmed" &&
+          evidence.sourceId === CONVERSATION_SOURCE_ID,
       ),
     ).toBe(true);
   });
 
-  it("never treats not-applicable synthetic fixture evidence as verified leverage", () => {
+  it("never treats simulated conversation evidence as verified leverage", () => {
     expect(buildNegotiationHandoff(createHandoffFixture()).verifiedCompetingQuote).toBeNull();
   });
 
@@ -101,7 +101,7 @@ describe("automatic negotiation handoff", () => {
     expect(() => buildNegotiationHandoff(fixture)).toThrow(/Top Five provider/);
   });
 
-  it("rejects a stale synthetic quote validity deadline", () => {
+  it("rejects a stale conversation quote validity deadline", () => {
     const fixture = createHandoffFixture();
     fixture.quotes[0] = {
       ...fixture.quotes[0]!,
@@ -111,7 +111,7 @@ describe("automatic negotiation handoff", () => {
     expect(() => buildNegotiationHandoff(fixture)).toThrow(/stale/);
   });
 
-  it("rejects fake provider-confirmed provenance for synthetic fixture evidence", () => {
+  it("rejects non-transcript provenance for conversation evidence", () => {
     const fixture = createHandoffFixture();
     fixture.evidence[0] = {
       ...fixture.evidence[0]!,
@@ -125,14 +125,14 @@ describe("automatic negotiation handoff", () => {
     ["missing", null],
     ["missing required language", "This is a simulated quote for demonstration only."],
     ["missing not-binding warning", "This simulated quote is not supplied by the insurer."],
-  ])("rejects a %s synthetic disclaimer", (_label, disclaimer) => {
+  ])("rejects a %s simulated quote disclaimer", (_label, disclaimer) => {
     const fixture = createHandoffFixture();
     fixture.quotes[0] = { ...fixture.quotes[0]!, disclaimer };
 
     expect(() => buildNegotiationHandoff(fixture)).toThrow(/disclaimer/);
   });
 
-  it("rejects a synthetic recommendation without required human verification", () => {
+  it("rejects a simulated recommendation without required human verification", () => {
     const fixture = createHandoffFixture();
     fixture.quotes[0] = { ...fixture.quotes[0]!, requiresHumanVerification: false };
 
@@ -164,7 +164,7 @@ describe("automatic negotiation handoff", () => {
     expect(() => buildNegotiationHandoff(fixture)).toThrow();
   });
 
-  it.each(MISSING_METADATA_CASES)("rejects a recommended quote missing synthetic %s metadata", (_label, overrides) => {
+  it.each(MISSING_METADATA_CASES)("rejects a recommended quote missing conversation %s metadata", (_label, overrides) => {
     const fixture = createHandoffFixture();
     fixture.quotes[0] = { ...fixture.quotes[0]!, ...overrides };
 

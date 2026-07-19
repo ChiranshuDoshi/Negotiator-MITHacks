@@ -29,7 +29,7 @@ function evidence(id: string, claimKey: string): Evidence {
     transcriptStartMs: null,
     transcriptEndMs: null,
     speaker: "provider",
-    excerpt: `Synthetic provider evidence for ${claimKey}`,
+    excerpt: `Simulated provider evidence for ${claimKey}`,
     url: null,
     retrievedAt: evaluatedAt,
     confidence: 1,

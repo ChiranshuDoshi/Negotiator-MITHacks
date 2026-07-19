@@ -4,6 +4,22 @@ export {
   PreparedNegotiationContextError,
   PreparedNegotiationContextService,
 } from "./prepared-context";
+export {
+  FixedFileQuoteCollectionContextLoader,
+  QuoteCollectionService,
+  quoteCollections,
+} from "./quote-collection";
+export type {
+  QuoteCollectionContextLoader,
+  QuoteCollectionConversation,
+  QuoteCollectionProviderStatus,
+  QuoteCollectionResult,
+  QuoteCollectionResultPersister,
+  QuoteCollectionSimulationReference,
+  QuoteCollectionSnapshot,
+  QuoteCollectionTranscriptEntry,
+  QuoteCollectionTranscriptLabel,
+} from "./quote-collection";
 export type {
   PreparedNegotiationContextLoader,
   PreparedNegotiationContextProvider,
@@ -15,6 +31,10 @@ export type {
   ExplicitQuoteSelection,
   NegotiationReference,
   NegotiationSessionInput,
+  QuoteCapture,
+  QuoteCollectionReference,
+  QuoteCollectionSessionInput,
   SafeNegotiationContext,
+  SafeQuoteCollectionContext,
   TranscriptEntry,
 } from "./types";

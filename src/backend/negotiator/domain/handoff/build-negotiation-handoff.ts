@@ -230,23 +230,23 @@ function addRecommendedQuoteIssues(
   const addIssue = (field: string, message: string) =>
     context.addIssue({ code: "custom", path: [...path, field], message });
 
-  if (quote.sourceType !== "synthetic_dataset") addIssue("sourceType", "recommended quote must come from the synthetic dataset");
-  if (quote.sourceConversationId !== null) addIssue("sourceConversationId", "synthetic dataset quote cannot reference a conversation");
-  if (!quote.sourceArtifactId) addIssue("sourceArtifactId", "synthetic dataset quote must identify its source artifact");
-  if (!quote.scenarioId) addIssue("scenarioId", "recommended quote must identify its synthetic scenario");
+  if (quote.sourceType !== "conversation") addIssue("sourceType", "recommended quote must come from a quote-collection conversation");
+  if (!quote.sourceConversationId) addIssue("sourceConversationId", "conversation quote must identify its source conversation");
+  if (quote.sourceArtifactId) addIssue("sourceArtifactId", "conversation quote cannot reference an external artifact");
+  if (quote.scenarioId) addIssue("scenarioId", "conversation quote cannot identify an offline scenario");
   if (quote.simulated !== true) addIssue("simulated", "recommended quote must be simulated");
   if (!quote.currency) addIssue("currency", "recommended quote must identify its currency");
   if (!quote.disclaimer) addIssue("disclaimer", "recommended quote must include the simulation disclaimer");
   if (
     quote.disclaimer &&
-    (!/not supplied by (?:the )?insurer/iu.test(quote.disclaimer) || !/not binding/iu.test(quote.disclaimer))
+    (!/simulated/iu.test(quote.disclaimer) || !/not binding/iu.test(quote.disclaimer))
   ) {
-    addIssue("disclaimer", "simulation disclaimer must say the quote is not insurer-supplied and not binding");
+    addIssue("disclaimer", "simulation disclaimer must say the quote is simulated and not binding");
   }
   if (!quote.quoteValidUntil) {
     addIssue("quoteValidUntil", "recommended quote must include a structured validity deadline");
   } else if (Date.parse(quote.quoteValidUntil) <= generatedAt.getTime()) {
-    addIssue("quoteValidUntil", "recommended synthetic quote is stale");
+    addIssue("quoteValidUntil", "recommended quote is stale");
   }
   if (quote.effectiveComparisonCostCents === null || quote.effectiveComparisonCostCents <= 0) {
     addIssue("effectiveComparisonCostCents", "recommended quote must have a positive effective comparison cost");
@@ -257,21 +257,21 @@ function addRecommendedQuoteIssues(
   if (quote.policyTermMonths === null) addIssue("policyTermMonths", "recommended quote must identify its policy term");
   if (quote.evidenceIds.length === 0) addIssue("evidenceIds", "recommended quote must include evidence");
   if (!quote.requiresHumanVerification) {
-    addIssue("requiresHumanVerification", "synthetic recommendation must remain marked for human verification");
+    addIssue("requiresHumanVerification", "simulated recommendation must remain marked for human verification");
   }
   for (const evidenceId of quote.evidenceIds) {
     const evidence = evidenceById.get(evidenceId);
     if (!evidence) {
-      addIssue("evidenceIds", `synthetic evidence ${evidenceId} is missing`);
+      addIssue("evidenceIds", `simulated call evidence ${evidenceId} is missing`);
       continue;
     }
     if (
       evidence.workflowId !== quote.workflowId ||
-      evidence.type !== "demo_fixture" ||
-      evidence.verificationStatus !== "not_applicable" ||
-      evidence.sourceId !== quote.sourceArtifactId
+      evidence.type !== "transcript" ||
+      evidence.verificationStatus !== "user_confirmed" ||
+      evidence.sourceId !== quote.sourceConversationId
     ) {
-      addIssue("evidenceIds", `synthetic evidence ${evidenceId} has invalid provenance`);
+      addIssue("evidenceIds", `conversation evidence ${evidenceId} has invalid provenance`);
     }
   }
   if (quote.status !== "complete") addIssue("status", "recommended quote must be complete");
@@ -309,6 +309,7 @@ export function buildNegotiationHandoff(input: BuildNegotiationHandoffInput): Ne
     providerName,
     quoteId: recommendedQuote.quoteId,
     scenarioId: recommendedQuote.scenarioId,
+    sourceConversationId: recommendedQuote.sourceConversationId,
     currency: recommendedQuote.currency,
     effectiveComparisonCostCents: recommendedQuote.effectiveComparisonCostCents,
     annualizedCostCents: recommendedQuote.annualizedCostCents,
@@ -323,12 +324,14 @@ export function buildNegotiationHandoff(input: BuildNegotiationHandoffInput): Ne
     disclaimer: recommendedQuote.disclaimer,
   };
 
-  const leverage = selectVerifiedLeverage({
-    selectedQuote: recommendedQuote,
-    candidateQuotes: validated.quotes.filter(({ quoteId }) => quoteId !== recommendedQuoteId),
-    evidence: validated.evidence,
-    now: validated.generatedAt,
-  });
+  const leverage = recommendedQuote.simulated
+    ? { status: "no_leverage_available" as const }
+    : selectVerifiedLeverage({
+        selectedQuote: recommendedQuote,
+        candidateQuotes: validated.quotes.filter(({ quoteId }) => quoteId !== recommendedQuoteId),
+        evidence: validated.evidence,
+        now: validated.generatedAt,
+      });
 
   let verifiedCompetingQuote: NegotiationHandoff["verifiedCompetingQuote"] = null;
   if (leverage.status === "selected") {
