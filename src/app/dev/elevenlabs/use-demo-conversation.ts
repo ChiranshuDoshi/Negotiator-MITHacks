@@ -253,6 +253,7 @@ export function useDemoConversation() {
       };
       activeSessionRef.current = session;
       const dynamicVariables = body.session.negotiation ? {
+        user_display_name: body.session.negotiation.userDisplayName,
         selected_provider_name: body.session.negotiation.selectedProviderName,
         selected_provider_id: body.session.negotiation.targetProviderId,
         selected_quote_id: body.session.negotiation.selectedQuoteId,

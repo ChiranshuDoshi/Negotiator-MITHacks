@@ -7,3 +7,5 @@ coverage/
 .headroom/
 .mcp-cache/
 .artifacts/
+.DS_Store
+package-lock.json

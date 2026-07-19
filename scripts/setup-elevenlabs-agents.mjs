@@ -198,7 +198,7 @@ export async function main(argv = process.argv.slice(2), dependencies = {}) {
   loadEnv(root);
   const negotiatorPolicy = await readFile(resolve(root, "negotiation.md"), "utf8");
   const client = dependencies.client ?? new (await import("@elevenlabs/elevenlabs-js")).ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY });
-  const results = await provisionAgents(client, { ...options, voiceId: options.voiceId ?? process.env.ELEVENLABS_VOICE_ID, negotiatorPolicy });
+  const results = await provisionAgents(client, { ...options, voiceId: options.voiceId || process.env.ELEVENLABS_VOICE_ID || undefined, negotiatorPolicy });
   if (options.apply) await upsertAgentIds(resolve(root, ".env.local"), results);
   console.log(`${options.apply ? "Applied" : "Dry run"} ElevenLabs plan:`);
   for (const [name, result] of Object.entries(results)) console.log(`  ${name}: ${result.action}${result.agentId ? ` (${result.agentId})` : ""}`);
