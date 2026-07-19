@@ -70,6 +70,22 @@ corepack pnpm talk:elevenlabs -- --live
 
 The live command uses the prepared `.artifacts/person3/negotiation-session.json`, streams the default microphone and speakers, consumes ElevenLabs credits, and ends on Ctrl-C. Use headphones for reliable interruption handling. It keeps one conversation open so the agent can use the current call's history, and it never sends the private target or range to ElevenLabs or records a negotiation result from this terminal smoke check. A teammate connecting a frontend should pass the returned safe `userDisplayName` as ElevenLabs dynamic variable `user_display_name`; no frontend is required for this backend flow.
 
+## Native Twilio outbound calling
+
+The outbound-call route uses ElevenLabs' native Twilio integration: ElevenLabs places the call with the Twilio number you import, so this application does not store a Twilio SID or Auth Token, operate a media relay, or expose Twilio webhooks. First add a purchased Twilio number (inbound and outbound) or a verified Twilio caller ID (outbound only) in ElevenLabs, then set the returned non-secret ID as `ELEVENLABS_TWILIO_PHONE_NUMBER_ID`.
+
+Set `TWILIO_OUTBOUND_ALLOWED_DESTINATIONS` to a comma-separated list of consented E.164 destinations. The protected route will not place calls outside that list. For an initial personal-phone smoke test, include your mobile number there and call the route with the same number:
+
+```bash
+curl -X POST http://localhost:3000/api/twilio/outbound-call \
+  -H "Authorization: Bearer $POLICYSCOUT_INTERNAL_API_KEY" \
+  -H "Idempotency-Key: personal-phone-smoke-001" \
+  -H "Content-Type: application/json" \
+  -d '{"toNumber":"+15551234567"}'
+```
+
+The route requires `DEMO_MODE=true`, `ELEVENLABS_API_KEY`, `ELEVENLABS_NEGOTIATOR_AGENT_ID`, `ELEVENLABS_TWILIO_PHONE_NUMBER_ID`, the destination allowlist, and an `Idempotency-Key` header. It is intentionally unavailable in production. It starts a minimal agent call without negotiation context, recordings, or retries, and returns only the ElevenLabs conversation ID and Twilio Call SID. Reusing a key for the same destination returns the original outcome without dialing again; reuse it for another destination is rejected. The idempotency guard is process-local for this demo scaffold; production use requires durable request storage and an atomic claim keyed to the authenticated caller and idempotency key before enabling dialing. Automated tests use fake gateways and never place calls.
+
 ## Verify the live Person 4 flow
 
 With both keys in `.env`, run:
