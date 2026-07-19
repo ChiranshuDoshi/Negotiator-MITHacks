@@ -11,7 +11,7 @@
 
 - Typography: Manrope display type and IBM Plex Sans interface type preserve the reference's premium editorial-to-product transition.
 - Layout: the implementation now uses three continuous spatial beats: medium rear follow, cabin-to-screen push, and screen-to-viewport expansion. The distant opening and repeated seat beats were removed.
-- Color: the dark evergreen vehicle scene now expands into the same dark ink-and-mint result command center, avoiding a white overlay during the Mercury-style handoff.
+- Color: the vehicle scene expands into a dark ink-and-mint result command center, then the interface itself morphs to the dashboard's light theme during the final scroll range.
 - Assets: runtime cinematic motion uses only `rear-follow-medium.webp` and `between-front-seats.webp`. Each segment moves by continuous transform, and the single source change is hidden inside a short dark rear-window handoff.
 - Product content: the expanded screen resolves into the working quote and negotiation product rather than a static marketing mock.
 
@@ -33,6 +33,12 @@ Evidence:
 - `frontend/qa/theme-handoff-comparison.jpg`
 - `frontend/qa/theme-handoff-compact-final.png`
 - `frontend/qa/theme-handoff-gap-fix-comparison.jpg`
+- `frontend/qa/theme-morph-01-dark.png`
+- `frontend/qa/theme-morph-02-contrast-dark.png`
+- `frontend/qa/theme-morph-contrast-switch.png`
+- `frontend/qa/theme-morph-03-contrast-light.png`
+- `frontend/qa/theme-morph-04-white.png`
+- `frontend/qa/mercury-theme-morph-comparison.jpg`
 
 ## Interaction Verification
 
@@ -48,7 +54,7 @@ Evidence:
 - Exterior and cabin segments each preserve a monotonic center-axis push because every segment holds one raster source.
 - The rear-window handoff reaches a dark threshold before the cabin source appears, preventing double-car and double-seat exposure.
 - The same dark result DOM is visible in the physical screen, at the mid-scale state, and at full viewport size; reverse scroll returns through the same transforms.
-- A `96px` feathered edge attached to the real demo moves upward with the dashboard itself. It bridges the dark result to the demo's exact `#f3f5f6` background without masking the result or creating a contentless transition band.
+- The final 18% of cinematic progress continuously interpolates the result background and panel surfaces from dark ink to the dashboard's `#f3f5f6` and white surfaces. Text switches from light to dark at the midpoint so the transition stays readable before the light dashboard enters.
 - Desktop horizontal overflow: `0px`.
 - The demo jump lands at `demoTop: 0`; the vehicle WebP loads at `1448x1086` and no image reports a failed intrinsic size.
 
@@ -67,7 +73,7 @@ Evidence:
 - P2: the light result dashboard looked like a floating overlay during expansion. Reused one dark result DOM from the physical infotainment bounds through the full viewport, with continuous X/Y scale and clip-path interpolation.
 - P2: the result UI initially appeared only near the end of the cabin push and used fixed bounds, so it drifted away from the physical screen during zoom. Measured the source display's inner pixel bounds, projected them through the same `object-fit: cover` and cabin scale math, and used the resulting live rectangle for clip, translation, and X/Y scale. The small result is now visible on cabin entry and remains flush with all four display edges.
 - P2: the exterior close-up centered on the tailgate, making the straight push feel too low. Moved the Canvas focal height from `55%` to `46%` so the rear window remains the camera target as the vehicle fills the viewport.
-- P2: the first theme handoff fixed the hard boundary but created a large washed-out gap above the dashboard. Removed the viewport-sized overlay and attached a compact `96px` feather directly to `ProductDemo`, so the real interface now carries the transition into view.
+- P2: gradient overlays fixed the hard boundary but created an artificial washed-out gap above the dashboard. Removed the overlay entirely and made the result UI itself transition from dark to light; the final result and incoming dashboard now share the same background, text, surface, border, accent, and waveform palette.
 
 ## Residual P3 Notes
 

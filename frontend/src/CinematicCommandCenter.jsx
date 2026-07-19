@@ -73,23 +73,24 @@ export function CarCommandCenter({ style }) {
 }
 
 export function FullCommandCenter({ contentOpacity = 1, style, themeProgress = 0 }) {
+  const contrastProgress = themeProgress < 0.5 ? 0 : 1;
   const theme = {
     "--command-bg": mixColor([8, 17, 15, 1], [243, 245, 246, 1], themeProgress),
     "--command-topbar": mixColor([10, 21, 19, 1], [255, 255, 255, 1], themeProgress),
     "--command-surface": mixColor([13, 26, 23, 1], [255, 255, 255, 1], themeProgress),
     "--command-savings-bg": mixColor([18, 48, 39, 1], [232, 245, 241, 1], themeProgress),
     "--command-evidence-bg": mixColor([5, 11, 10, 1], [255, 255, 255, 1], themeProgress),
-    "--command-text": mixColor([237, 247, 243, 1], [20, 32, 30, 1], themeProgress),
-    "--command-heading": mixColor([245, 250, 248, 1], [20, 32, 30, 1], themeProgress),
-    "--command-muted": mixColor([230, 244, 239, 0.58], [77, 91, 88, 0.82], themeProgress),
-    "--command-muted-weak": mixColor([225, 242, 236, 0.5], [103, 115, 111, 1], themeProgress),
+    "--command-text": mixColor([237, 247, 243, 1], [20, 32, 30, 1], contrastProgress),
+    "--command-heading": mixColor([245, 250, 248, 1], [20, 32, 30, 1], contrastProgress),
+    "--command-muted": mixColor([230, 244, 239, 0.58], [77, 91, 88, 0.82], contrastProgress),
+    "--command-muted-weak": mixColor([225, 242, 236, 0.5], [103, 115, 111, 1], contrastProgress),
     "--command-line": mixColor([255, 255, 255, 0.1], [216, 223, 220, 1], themeProgress),
     "--command-line-strong": mixColor([113, 224, 193, 0.2], [187, 200, 195, 1], themeProgress),
-    "--command-accent": mixColor([125, 226, 196, 1], [8, 123, 112, 1], themeProgress),
-    "--command-price-muted": mixColor([215, 229, 224, 1], [77, 91, 88, 1], themeProgress),
+    "--command-accent": mixColor([125, 226, 196, 1], [8, 123, 112, 1], contrastProgress),
+    "--command-price-muted": mixColor([215, 229, 224, 1], [77, 91, 88, 1], contrastProgress),
     "--command-mark-bg": mixColor([9, 28, 25, 0.62], [232, 239, 236, 1], themeProgress),
     "--command-mark-border": mixColor([255, 255, 255, 0.38], [187, 200, 195, 1], themeProgress),
-    "--command-wave-muted": mixColor([213, 226, 221, 0.28], [77, 91, 88, 0.28], themeProgress),
+    "--command-wave-muted": mixColor([213, 226, 221, 0.28], [77, 91, 88, 0.28], contrastProgress),
   };
 
   return (
